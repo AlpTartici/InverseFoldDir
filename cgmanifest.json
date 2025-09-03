@@ -6,7 +6,8 @@
             "component": {
                 "type": "git",
                 "git": {
-                  "repositoryUrl": "https://github.com/drorlab/gvp-pytorch"
+                  "repositoryUrl": "https://github.com/drorlab/gvp-pytorch",
+                  "commitHash": "82af6b22eaf8311c15733117b0071408d24ed877"
                 }
             },
             "developmentDependency": false
@@ -15,7 +16,8 @@
             "component": {
                 "type": "git",
                 "git": {
-                  "repositoryUrl": "https://github.com/HannesStark/dirichlet-flow-matching"
+                  "repositoryUrl": "https://github.com/HannesStark/dirichlet-flow-matching",
+                  "commitHash": "6f360612da8f69ecf4860c075f74ed52b37ce64b"
                 }
             },
             "developmentDependency": false
