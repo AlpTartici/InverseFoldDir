@@ -1,0 +1,24 @@
+{
+    "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+    "version": 1,
+    "registrations": [
+        {
+            "component": {
+                "type": git,
+                "git": {
+                  "repositoryUrl": https://github.com/drorlab/gvp-pytorch
+                }
+            },
+            "developmentDependency": false
+        },
+        {
+            "component": {
+                "type": git,
+                "git": {
+                  "repositoryUrl": https://github.com/HannesStark/dirichlet-flow-matching
+                }
+            },
+            "developmentDependency": false
+        }
+    ]
+}
