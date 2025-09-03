@@ -4,18 +4,18 @@
     "registrations": [
         {
             "component": {
-                "type": git,
+                "type": "git",
                 "git": {
-                  "repositoryUrl": https://github.com/drorlab/gvp-pytorch
+                  "repositoryUrl": "https://github.com/drorlab/gvp-pytorch"
                 }
             },
             "developmentDependency": false
         },
         {
             "component": {
-                "type": git,
+                "type": "git",
                 "git": {
-                  "repositoryUrl": https://github.com/HannesStark/dirichlet-flow-matching
+                  "repositoryUrl": "https://github.com/HannesStark/dirichlet-flow-matching"
                 }
             },
             "developmentDependency": false
