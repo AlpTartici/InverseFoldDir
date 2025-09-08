@@ -1,0 +1,36 @@
+description: foldseek run easy search
+
+target:
+  service: sing
+  workspace_name: alpamltws
+  name: msrresrchbasicvc
+
+environment:
+  image:  foldseek:no_pdb
+  registry: alpamltacr.azurecr.io
+
+
+data:
+  local_dir: ./datasets
+  remote_dir: data/inv_fold/
+
+jobs:
+  - name: foldseek
+    sku: 80G1-A100
+    preemptible: True
+    command:
+      - conda activate base
+      # Verify download completed successfully
+      - echo "Verifying database integrity..."
+      - ls -la $$AMLT_DATA_DIR/tmp/5366681926450489200
+      - file $$AMLT_DATA_DIR/tmp/5366681926450489200
+      - foldseek makepaddedseqdb $$AMLT_DATA_DIR/tmp/5366681926450489200/afdb50 $$AMLT_DATA_DIR/tmp/afdb_pad 1
+      - echo "Foldseek uniprot50 padding finished."
+    submit_args:
+      max_run_duration_seconds: 86400 
+      env:
+        _AZUREML_SINGULARITY_JOB_UAI: ***REMOVED***
+        AMLT_DIRSYNC_FREQ: 20
+    identity: managed
+
+

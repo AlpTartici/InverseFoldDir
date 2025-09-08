@@ -1,0 +1,34 @@
+description: foldseek run easy search
+
+target:
+  service: sing
+  workspace_name: alpamltws
+  name: msrresrchbasicvc
+
+
+environment:
+  image:  foldseek:latest
+  registry: alpamltacr.azurecr.io
+
+
+data:
+  local_dir: ./datasets
+  remote_dir: data/inv_fold/
+
+jobs:
+  - name: foldseek_uniprot50_search
+    sku: 80G1-A100
+    preemptible: True
+    command:
+      - conda activate base
+      - cd ../../workspace/datasets
+      - ./foldseek_search.sh test_val_chain_pdbs $$AMLT_DATA_DIR/tmp/5366681926450489200/afdb50 $$AMLT_DATA_DIR/datasets/foldseek_search_results_uniprot50_afdb
+      - echo "Foldseek search finished."
+    submit_args:
+      max_run_duration_seconds: 172800 
+      env:
+        _AZUREML_SINGULARITY_JOB_UAI: ***REMOVED***
+        AMLT_DIRSYNC_FREQ: 60
+    identity: managed
+
+

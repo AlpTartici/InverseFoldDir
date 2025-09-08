@@ -1,0 +1,57 @@
+description: Create AF2 pickle chunks for fast training
+
+target:
+  service: sing
+  workspace_name: alpamltws
+  name: msroctovc
+
+environment:
+  image: full_pipeline:latest
+  registry: alpamltacr.azurecr.io
+
+storage:
+  external:
+    storage_account_name: natscidata
+    container_name: databases
+
+data:
+  storage_id: external
+  remote_dir: raw/alphafold_database/cif
+
+jobs:
+  - name: create_af2_chunks_split_5
+    sku: 40G1-A100
+    preemptible: False
+    command:
+      - source activate esmfold
+      - cd /workspace
+      - echo "Starting AF2 chunk creation..."
+      - echo "Checking environment..."
+      - python -c "import numpy as np; print('NumPy version:', np.__version__)"
+      - echo "Checking disk space..."
+      - df -h /
+      - echo "Creating AF2 chunks with streaming approach (non-spammy progress)..."
+      - python data/create_af2_pkl_chunks_streaming.py 
+        --input_dir $$AMLT_DATA_DIR 
+        --cluster_dir datasets/af_clusters 
+        --flat_members_file flat_members_group_5.npy 
+        --output_dir $$AMLT_OUTPUT_DIR/af2_chunks/group_5/
+        --chunk_size 2048 
+        --coverage 2 
+        --num_workers 64 
+        --batch_size 200 
+        --max_length 700 
+        --min_plddt 70.0 
+        --parse_timeout 8
+        --progress_log_every 180 
+        --fail_buffer_flush 400
+      - echo "AF2 chunks created successfully!"
+      - ls -la $$AMLT_OUTPUT_DIR/af2_chunks/group_5/
+      - echo "Chunk creation completed"
+    submit_args:
+      max_run_duration_seconds: 350000  
+      env:
+        _AZUREML_SINGULARITY_JOB_UAI: ***REMOVED***
+        AMLT_DIRSYNC_FREQ: 600  # Sync every 10 minutes
+        AMLT_OUTPUT_DIR: $$AMLT_OUTPUT_DIR
+    identity: managed

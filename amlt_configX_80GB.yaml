@@ -1,0 +1,42 @@
+description: running on a 80GB GPU with nondistributed config 
+
+target:
+  service: sing
+  workspace_name: alpamltws
+  name: msrresrchvc
+
+environment:
+  image: full_pipeline:main
+  registry: alpamltacr.azurecr.io
+
+data:
+  local_dir: ./datasets
+  remote_dir: data/inv_fold/
+
+jobs:
+  - name: config_319
+    sku: 1x80G4-A100
+    preemptible: False
+    command:
+      - source activate esmfold
+      - wandb login
+      - cd /workspace
+      - ls $$AMLT_DATA_DIR
+      - echo "below is the echoes amlt data dir"
+      - echo $$AMLT_DATA_DIR
+      - test -d "$$AMLT_DATA_DIR" && echo "Directory exists" || echo "Directory does not exist"
+      - echo "Starting AlphaFold2 Test Pipeline"
+      - python pipeline_orchestrator.py --config-file configs/config_319.json --output-dir $$AMLT_OUTPUT_DIR --af2_chunk_dir $$AMLT_DATA_DIR/datasets/af2_chunks_with_dssp/
+      - echo $$AMLT_DATA_DIR
+      - echo "AF2 test completed successfully"
+    submit_args:
+      max_run_duration_seconds: 500000
+      env:
+        _AZUREML_SINGULARITY_JOB_UAI: ***REMOVED***
+        AMLT_DIRSYNC_FREQ: 60
+        WANDB_API_KEY: "***REMOVED***"
+        WANDB_BASE_URL: "https://microsoft-research.wandb.io"
+        WANDB_RUN_GROUP: "config_319"
+        WANDB_JOB_TYPE: "fast_test"
+        AMLT_OUTPUT_DIR: $$AMLT_OUTPUT_DIR
+    identity: managed

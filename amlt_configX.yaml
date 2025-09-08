@@ -1,0 +1,44 @@
+description: running on 1 GPU with config
+
+target:
+  service: sing
+  workspace_name: alpamltws
+  name: msroctovc
+
+environment:
+  image: full_pipeline:latest
+  registry: alpamltacr.azurecr.io
+
+storage:
+  external:
+    storage_account_name: natscidata
+    container_name: databases
+
+data:
+  storage_id: external
+  remote_dir: raw/alphafold_database/cif
+
+jobs:
+  - name: config_109
+    sku: 40G1-A100
+    preemptible: False
+    command:
+      - source activate esmfold
+      - cd /workspace
+      - echo "Starting Config Pipeline"
+      - echo "Checking Python environment..."
+      - python -c "import torch; print('Torch version:', torch.__version__, 'CUDA available:', torch.cuda.is_available())"
+      - echo "Running pipeline..."
+      - python pipeline_orchestrator.py --config-file configs/config_109.json --output-dir $$AMLT_OUTPUT_DIR --remote-data $$AMLT_DATA_DIR
+      - echo "Config completed successfully"
+    submit_args:
+      max_run_duration_seconds: 100000
+      env:
+        _AZUREML_SINGULARITY_JOB_UAI: ***REMOVED***
+        AMLT_DIRSYNC_FREQ: 400
+        WANDB_API_KEY: "***REMOVED***"
+        WANDB_BASE_URL: "https://microsoft-research.wandb.io"
+        WANDB_RUN_GROUP: "config_109"
+        WANDB_JOB_TYPE: "fast_test"
+        AMLT_OUTPUT_DIR: $$AMLT_OUTPUT_DIR
+    identity: managed

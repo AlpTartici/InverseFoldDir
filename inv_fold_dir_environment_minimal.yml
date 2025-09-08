@@ -1,0 +1,51 @@
+name: inv_fold_dir
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - git
+  
+  # Install everything via pip to exactly match Docker
+  - pip:
+    - biotite
+    - "git+https://github.com/NVIDIA/dllogger.git"
+    - omegaconf
+    
+    # OpenFold dependencies (from Docker)
+    - dm-tree
+    - ml-collections
+    - immutabledict
+    - contextlib2
+    - biopython
+    - scipy
+    
+    # Additional dependencies for inverse folding (from Docker)
+    - e3nn
+    - biopandas
+    - tqdm
+    - tensorboard
+    - wandb
+    - matplotlib
+    - seaborn
+    - PyYAML
+    - scikit-learn
+    - pandas
+    - numpy
+    
+    # Additional packages needed for evaluation and analysis (from Docker)
+    - tmtools
+    - spyrmsd
+    - einops
+    - plotly
+    - imageio
+    - gpustat
+    - lightning
+    
+    # Jupyter and notebook dependencies
+    - jupyter
+    - jupyterlab
+    - ipykernel
+    - ipywidgets
+    - notebook

@@ -1,0 +1,80 @@
+description: inverse folding conditioned on backbone structure - base env v9 checks torch geom
+
+target:
+  service: sing
+  workspace_name: alpamltws
+  name: msrresrchbasicvc
+
+environment:
+  image:  inv_fold:base_env_v9
+  registry: alpamltacr.azurecr.io
+
+
+
+data:
+  local_dir: ./datasets
+  remote_dir: data/inv_fold/
+
+    
+
+jobs:
+  - name: regular_newloss_l4
+    sku: 80G4-A100
+    preemptible: True
+    command:
+      - conda activate base
+      - wandb login
+      - echo "cd ../../workspace/"
+      - cd ../../workspace/
+      - echo "ls"
+      - ls
+      - echo "pwd"
+      - pwd
+      - echo "ls ../.."
+      - ls ../..
+      - echo "ls .."
+      - ls ..
+      - echo "ls"
+      - ls
+      - cd training
+      - echo "checking torch and cuda availability"
+      - python -c "import torch; print('Torch version:', torch.__version__, 'CUDA available:', torch.cuda.is_available())"
+      - python -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'No CUDA device found')"
+      - echo "checking pytorch geometric"
+      - python -c "import torch_geometric; print('PyG version:', torch_geometric.__version__)"
+      - echo "Setting NCCL environment variables for container compatibility"
+      - export NCCL_SHM_DISABLE=1
+      - export NCCL_P2P_DISABLE=1
+      - export NCCL_IB_DISABLE=1
+      - export NCCL_SOCKET_IFNAME=^lo,docker
+      - torchrun --nproc_per_node=4 train.py 
+        --split_json $$AMLT_DATA_DIR/datasets/cath-4.2/chain_set_splits.json 
+        --map_pkl $$AMLT_DATA_DIR/datasets/cath-4.2/chain_set_map.pkl 
+        --epochs 32 --lr 4e-3 --weight_decay 0.001
+        --mse_weight 0.1 --ce_weight 1.0 --dropout 0.01
+        --scheduler_patience 4 
+        --enable_checkpoint_rollback
+        --rollback_patience_factor 0.6
+        --num_workers 4 --distributed
+        --use_wandb
+        --use_qkv
+        --use_smoothed_labels
+        --use_virtual_node
+        --model_name_prefix regular_newloss
+        --batch 128 --num_layers 4 --hidden_dim 32
+        --recycle_steps 1 --seed 42 --run_mode regular
+        --output_dir $$AMLT_OUTPUT_DIR
+      - echo "Training with the supernode completed successfully."
+    submit_args:
+      max_run_duration_seconds: 86400 
+      env:
+        _AZUREML_SINGULARITY_JOB_UAI: ***REMOVED***
+        AMLT_DIRSYNC_FREQ: 20
+        WANDB_BASE_URL: "https://microsoft-research.wandb.io"
+        WANDB_API_KEY: "***REMOVED***"
+        # WANDB distributed training environment variables
+        WANDB_RUN_GROUP: "inverse-folding-distributed"
+        WANDB_JOB_TYPE: "train"
+    identity: managed
+
+
