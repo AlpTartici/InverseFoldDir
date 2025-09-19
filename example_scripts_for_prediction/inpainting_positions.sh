@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 # Inpainting with Position-Only Format Example Script  
 # Predict masked positions without validation (faster, more flexible)
 

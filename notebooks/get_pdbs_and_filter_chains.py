@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 # read ../datasets/cath-4.2/chain_set_splits.json into data
 import json
 from tqdm import tqdm
@@ -7,22 +9,19 @@ from Bio import PDB
 import os
 
 print("Starting PDB chain extraction script...")
-with open('../datasets/cath-4.2/chain_set_splits.json') as f:
-    data = json.load(f) 
+with open("../datasets/cath-4.2/chain_set_splits.json") as f:
+    data = json.load(f)
 
 
-data_test = data['test']
-data_validation = data['validation']
+data_test = data["test"]
+data_validation = data["validation"]
 combined_data = data_test + data_validation
-data_train = data['train']
-
-
+data_train = data["train"]
 
 
 parser = PDB.PDBParser()
 
 io = PDB.PDBIO()
-
 
 
 # wrap that in a function
@@ -47,11 +46,9 @@ def extract_chain_from_pdb(pdb_code, chain):
     url = f"https://files.rcsb.org/download/{pdb_code}.pdb"
     response = requests.get(url)
 
-    
-
     if response.status_code == 200:
-        
-        with open(full_pdb_path, 'w') as file:
+
+        with open(full_pdb_path, "w") as file:
             file.write(response.text)
     else:
         print(f"Failed to download PDB file for code: {pdb_code}")
@@ -69,7 +66,6 @@ def extract_chain_from_pdb(pdb_code, chain):
     return 3
 
 
- 
 failed_entries = []
 for entry in tqdm(data_train):
     pdb_code, chain_id = entry.split(".")
@@ -78,6 +74,6 @@ for entry in tqdm(data_train):
         failed_entries.append(entry)
 
 # Save failed entries to a file
-with open('failed_entries.txt', 'w') as f:
+with open("failed_entries.txt", "w") as f:
     for entry in failed_entries:
         f.write(f"{entry}\n")

@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 # Full Sequence Sampling Example Script
 # Generate complete amino acid sequences conditioned on protein backbone structure
 

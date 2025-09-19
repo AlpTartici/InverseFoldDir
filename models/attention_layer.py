@@ -1,3 +1,7 @@
+
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 """
 attention_layer.py
 Simple attention-based MessagePassing with optional QKV attention.

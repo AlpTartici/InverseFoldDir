@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 """
 time_embed.py
 
@@ -9,6 +12,7 @@ time `t`. This is a crucial component in diffusion and flow-matching models.
 import torch
 import torch.nn as nn
 import numpy as np
+
 
 class GaussianFourierProjection(nn.Module):
     """
@@ -36,14 +40,14 @@ class GaussianFourierProjection(nn.Module):
             raise ValueError(f"embed_dim must be even, but got {embed_dim}")
 
         self.embed_dim = embed_dim
-        
+
         # Sample the random frequencies `W` from a standard normal distribution
         # and scale them. These frequencies are fixed after initialization.
         W = torch.randn(embed_dim // 2) * scale
-        
+
         # Register `W` as a buffer. This means it's part of the module's state
         # but is not considered a trainable parameter.
-        self.register_buffer('W', W)
+        self.register_buffer("W", W)
 
     def forward(self, t: torch.Tensor) -> torch.Tensor:
         """
@@ -52,7 +56,7 @@ class GaussianFourierProjection(nn.Module):
         Args:
             t (torch.Tensor): A tensor of shape [B] or [B,1] containing the
                               time steps (noise levels) for each sample in the batch.
-        
+
         Returns:
             A tensor of shape [B, embed_dim] representing the time embeddings.
         """

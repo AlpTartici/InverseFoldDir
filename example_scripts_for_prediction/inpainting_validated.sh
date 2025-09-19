@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 # Inpainting with Position+Validation Format Example Script
 # Predict masked positions with amino acid validation (perfect for variant effect studies)
 

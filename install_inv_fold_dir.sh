@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 # Installation script for inv_fold_dir environment
 # Exactly matches Docker_full_pipeline_fixed installation steps
 

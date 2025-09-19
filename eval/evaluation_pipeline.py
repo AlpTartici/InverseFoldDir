@@ -1,3 +1,7 @@
+
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 """
 Evaluation Pipeline for Protein Structure Prediction
 

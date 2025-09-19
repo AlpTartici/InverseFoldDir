@@ -1,3 +1,7 @@
+
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 """
 Configuration file loader and manager for pipeline orchestrator.
 Supports JSON, YAML, and TOML configuration files.

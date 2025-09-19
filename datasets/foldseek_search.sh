@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 # write an sh file that runs foldseek search
 #!/bin/bash
 

@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 
 # Test script for the evaluation pipeline
 # This script demonstrates how to use the evaluation pipeline

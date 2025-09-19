@@ -1,3 +1,7 @@
+
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 """
 Trajectory Analysis Saver for Protein Sequence Sampling
 

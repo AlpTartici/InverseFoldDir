@@ -1,3 +1,6 @@
+#!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 azcopy cp "https://natscidata.blob.core.windows.net/databases/raw/alphafold_database/cif/AF-A0A6D0ENQ7-F1-model_v4.cif" "/home/t-alptartici/inverse-folding/datasets/af_clusters/struct_for_clus_reps/"
 azcopy cp "https://natscidata.blob.core.windows.net/databases/raw/alphafold_database/cif/AF-A0A655CQ90-F1-model_v4.cif" "/home/t-alptartici/inverse-folding/datasets/af_clusters/struct_for_clus_reps/"
 azcopy cp "https://natscidata.blob.core.windows.net/databases/raw/alphafold_database/cif/AF-J0FGU2-F1-model_v4.cif" "/home/t-alptartici/inverse-folding/datasets/af_clusters/struct_for_clus_reps/"

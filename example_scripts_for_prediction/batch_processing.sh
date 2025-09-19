@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 # Batch Processing from CSV Example Script
 # Process multiple mutations from a CSV file with custom batch size
 

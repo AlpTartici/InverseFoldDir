@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 # Distributed training with current CATH dataset
 
 echo "Starting distributed training..."
