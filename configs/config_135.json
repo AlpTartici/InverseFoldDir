@@ -108,7 +108,7 @@
     "enabled": true,
     "dataset": {
       "split_json": "datasets/cath-4.2/chain_set_splits.json",
-       "map_pkl": "datasets/cath-4.2/chain_set_map_with_b_factors.pkl",
+      "map_pkl": "datasets/cath-4.2/chain_set_map_with_b_factors.pkl",
       "base_dataset_dir": "datasets/cath-4.2"
     },
     "model_checkpoint": "auto",
@@ -168,9 +168,7 @@
     "max_workers": 1,
     "overwrite_predictions": true,
     "comparison_results_filename": "comparison_results.csv",
-    "output_file_patterns": [
-      "*.csv"
-    ],
+    "output_file_patterns": ["*.csv"],
     "distributed": {
       "enabled": false,
       "num_gpus": 1,

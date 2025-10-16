@@ -1,53 +1,56 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
-import torch, torch.optim as optim
+import gc
+import json
+import os
 import random
 import sys
-import os
-import json
-import gc
 import time
 from datetime import datetime
 
+import torch
+import torch.optim as optim
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from torch.utils.data import DataLoader
-import wandb
-import warnings
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-import numpy as np
-from tqdm import tqdm
-import torch.nn.functional as F
 import multiprocessing as mp
+import warnings
+
+import numpy as np
+import torch.nn.functional as F
+import wandb
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from data.cath_dataset import CathDataset
-from training.collate import collate_fn
-from models.dfm_model import DFMNodeClassifier
 from flow.sampler import sample_forward
-from training.training_utils import (
-    mask_virtual_nodes_from_batch,
-    apply_virtual_node_masking,
-    apply_geometry_masking,
-    apply_dssp_masking,
-    apply_same_masking_to_weights,
-    save_model_with_metadata,
-    cleanup_old_checkpoints,
-    get_rank,
-    should_log_to_wandb,
-    update_config_with_best_metrics,
-    run_validation_phase,
-    load_checkpoint_for_training,
-    load_optimizer_and_scheduler_state,
-)
+from models.dfm_model import DFMNodeClassifier
+from training.collate import collate_fn
 from training.config import get_training_config
 
 # Add distributed training imports
 from training.distributed_utils import (
-    setup_distributed,
-    wrap_model_for_distributed,
-    create_distributed_sampler,
     cleanup_distributed,
+    create_distributed_sampler,
     is_main_process,
     reduce_loss_across_processes,
+    setup_distributed,
+    wrap_model_for_distributed,
+)
+from training.training_utils import (
+    apply_dssp_masking,
+    apply_geometry_masking,
+    apply_same_masking_to_weights,
+    apply_virtual_node_masking,
+    cleanup_old_checkpoints,
+    get_rank,
+    load_checkpoint_for_training,
+    load_optimizer_and_scheduler_state,
+    mask_virtual_nodes_from_batch,
+    run_validation_phase,
+    save_model_with_metadata,
+    should_log_to_wandb,
+    update_config_with_best_metrics,
 )
 
 

@@ -9,9 +9,10 @@ This module handles coordinate noise application in the training loop where
 time values are available.
 """
 
+from typing import List, Optional, Union
+
 import torch
-from typing import Optional, List, Union
-from torch_geometric.data import Data, Batch
+from torch_geometric.data import Batch, Data
 
 
 def apply_coordinate_noise_to_batch(

@@ -146,9 +146,7 @@
       "backend": "nccl",
       "timeout_minutes": 3000
     },
-    "additional_args": [
-      "--sample_all"
-    ],
+    "additional_args": ["--sample_all"],
     "seed": null,
     "num_structures": null,
     "structure_indices": null
@@ -169,11 +167,6 @@
       "backend": "nccl",
       "timeout_minutes": 3000
     },
-    "additional_args": [
-      "--batch-size",
-      "8",
-      "--max-workers",
-      "4"
-    ]
+    "additional_args": ["--batch-size", "8", "--max-workers", "4"]
   }
 }

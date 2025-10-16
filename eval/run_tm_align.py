@@ -2,11 +2,12 @@
 # Licensed under the MIT License.
 import os
 import subprocess
-import pandas as pd
 from glob import glob
-from cif_parser import (
+
+import pandas as pd
+from cif_parser import (  # Assuming this can provide sequence length
     parse_cif_backbone_auto,
-)  # Assuming this can provide sequence length
+)
 
 
 def run_tmalign(file1, file2):

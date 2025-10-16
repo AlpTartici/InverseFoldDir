@@ -113,8 +113,8 @@
       "--flexible_loss_scaling",
       "--structure_noise_mag_std",
       "0.25",
-      "--val_metric", 
-      "val_all", 
+      "--val_metric",
+      "val_all",
       "--time_based_struct_noise",
       "decreasing",
       "--lambda_dssp_loss",
@@ -188,9 +188,7 @@
     "max_workers": 1,
     "overwrite_predictions": true,
     "comparison_results_filename": "comparison_results.csv",
-    "output_file_patterns": [
-      "*.csv"
-    ],
+    "output_file_patterns": ["*.csv"],
     "distributed": {
       "enabled": false,
       "num_gpus": 1,
@@ -216,8 +214,6 @@
   "max_retries": 3,
   "_enhancement_notes": {
     "version": "time_sampling_configs_v1",
-    "changes": [
-      ""
-    ]
+    "changes": [""]
   }
 }

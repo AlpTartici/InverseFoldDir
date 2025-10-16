@@ -8,14 +8,15 @@ This module handles protein structure prediction using ESMFold for sequences
 from prediction CSV files.
 """
 
-import os
-import torch
 import logging
+import os
 import signal
-from typing import Optional, Dict, Any, List
-from transformers import EsmForProteinFolding, AutoTokenizer
-import pandas as pd
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import pandas as pd
+import torch
+from transformers import AutoTokenizer, EsmForProteinFolding
 
 # Configure logging
 logging.basicConfig(

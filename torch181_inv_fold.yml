@@ -1,29 +1,29 @@
 name: torch181_inv_fold
 channels:
-- pytorch
-- pyg
-- conda-forge
-- defaults
+  - pytorch
+  - pyg
+  - conda-forge
+  - defaults
 dependencies:
-- python=3.8
-- pytorch=1.8.1
-- torchvision=0.9.1
-- torchaudio=0.8.1
-- cudatoolkit=10.2
-- numpy
-- scipy
-- biopython
-- pyyaml
-- wandb
-- argparse
-- networkx
-- matplotlib
-- pandas
-- scikit-learn
-- pip
-- pip:
-  - torch-geometric==1.7.2
-  - torch-scatter==2.0.7
-  - torch-sparse==0.6.10
-  - torch-cluster==1.5.9
-  - torch-spline-conv==1.2.1
+  - python=3.8
+  - pytorch=1.8.1
+  - torchvision=0.9.1
+  - torchaudio=0.8.1
+  - cudatoolkit=10.2
+  - numpy
+  - scipy
+  - biopython
+  - pyyaml
+  - wandb
+  - argparse
+  - networkx
+  - matplotlib
+  - pandas
+  - scikit-learn
+  - pip
+  - pip:
+      - torch-geometric==1.7.2
+      - torch-scatter==2.0.7
+      - torch-sparse==0.6.10
+      - torch-cluster==1.5.9
+      - torch-spline-conv==1.2.1

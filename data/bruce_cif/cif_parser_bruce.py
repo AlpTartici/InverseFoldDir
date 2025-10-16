@@ -6,17 +6,32 @@ from them.
 import itertools
 import logging
 import os.path
-
 from typing import Dict, Generator, Optional, Sequence, Set, Tuple
 
 import Levenshtein as ls
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-
 from Bio.PDB import MMCIF2Dict, MMCIFParser
 from Bio.PDB.Residue import DisorderedResidue
-
+from cif_file_errors import CATHError, NoPolypeptidesError
+from cif_file_globals import MPNN_TARGET_ATOMS
+from cif_file_utilities import _missing_to_empty_str, _process_citation_row, _select_opt
+from custom_types import (
+    ChainMetadata,
+    CitationInfoOutput,
+    CompoundInfo,
+    ConnectionInfo,
+    DSSPLadderInfo,
+    DSSPSecondaryStructure,
+    DSSPSheetInfo,
+    ImportantSiteInfo,
+    ModresOutput,
+    ResidueData,
+    ScrapedChainData,
+    StructureData,
+    StructureMetadata,
+)
 from tables import (
     ATOM_SITE_ANISOTROP_ENTRIES,
     ATOM_SITE_ENTRIES,
@@ -38,34 +53,9 @@ from tables import (
     STRUCT_SITE_GEN_ENTRIES,
 )
 
+from data.bruce_cif.aa_info import AA3_TO_1_CANONICAL, AA3_TO_1_FULL
 from data.bruce_cif.cath_record import CATHRecord
 from data.bruce_cif.chain_filters import _filter_all
-from cif_file_errors import (
-    CATHError,
-    NoPolypeptidesError,
-)
-from cif_file_globals import MPNN_TARGET_ATOMS
-from cif_file_utilities import (
-    _missing_to_empty_str,
-    _process_citation_row,
-    _select_opt,
-)
-from custom_types import (
-    ChainMetadata,
-    CitationInfoOutput,
-    CompoundInfo,
-    ConnectionInfo,
-    DSSPLadderInfo,
-    DSSPSecondaryStructure,
-    DSSPSheetInfo,
-    ImportantSiteInfo,
-    ModresOutput,
-    ResidueData,
-    ScrapedChainData,
-    StructureData,
-    StructureMetadata,
-)
-from data.bruce_cif.aa_info import AA3_TO_1_CANONICAL, AA3_TO_1_FULL
 
 # pylint: disable=too-many-lines
 

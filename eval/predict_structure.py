@@ -2,11 +2,9 @@
 # Licensed under the MIT License.
 # conda activate esmfold # this is the environment where esmfold is installed
 
-import torch
-from transformers import EsmForProteinFolding, AutoTokenizer
-
 import biotite.structure.io as bsio
-
+import torch
+from transformers import AutoTokenizer, EsmForProteinFolding
 
 model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1")
 tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1")

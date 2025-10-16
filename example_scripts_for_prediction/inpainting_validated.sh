@@ -20,14 +20,14 @@ echo " Inpainting with Position Validation"
 echo "============================================="
 echo "PDB Input: $PDB_INPUT"
 echo "Mask Positions: $MASK_POSITIONS (with amino acid validation)"
-echo "Output Directory: $OUTPUT_DIR"  
+echo "Output Directory: $OUTPUT_DIR"
 echo "Sampling Steps: $STEPS"
 echo "Flow Temperature: $FLOW_TEMP"
 echo "============================================="
 echo ""
 echo " Mask Format Explanation:"
 echo "  E42 = Mask position 42, but first verify it has amino acid E"
-echo "  G16 = Mask position 16, but first verify it has amino acid G"  
+echo "  G16 = Mask position 16, but first verify it has amino acid G"
 echo "  Positions are 1-indexed (matches PDB numbering) and separated by commas"
 echo ""
 echo "  Validation Safety:"
@@ -66,18 +66,18 @@ echo ""
 # Show quick results summary if files exist
 if [ -f "$OUTPUT_DIR/inpainting_validated_sequences.csv" ]; then
     echo "Inpainting Results Summary:"
-    
+
     # Count successful predictions
     total_sequences=$(tail -n +2 "$OUTPUT_DIR/inpainting_validated_sequences.csv" | wc -l)
     echo "Total sequences processed: $total_sequences"
-    
+
     # Show sample results
     if [ $total_sequences -gt 0 ]; then
         echo ""
         echo "Sample results:"
         head -n 4 "$OUTPUT_DIR/inpainting_validated_sequences.csv" | column -t -s ','
     fi
-    
+
     echo ""
     echo "Next Steps:"
     echo "  1. Check detailed JSON for position-by-position predictions"

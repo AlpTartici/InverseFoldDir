@@ -1,4 +1,4 @@
-description: running on a 80GB GPU with nondistributed config 
+description: running on a 80GB GPU with nondistributed config
 
 target:
   service: sing

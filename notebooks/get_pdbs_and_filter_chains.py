@@ -2,11 +2,11 @@
 # Licensed under the MIT License.
 # read ../datasets/cath-4.2/chain_set_splits.json into data
 import json
-from tqdm import tqdm
-import requests
-
-from Bio import PDB
 import os
+
+import requests
+from Bio import PDB
+from tqdm import tqdm
 
 print("Starting PDB chain extraction script...")
 with open("../datasets/cath-4.2/chain_set_splits.json") as f:

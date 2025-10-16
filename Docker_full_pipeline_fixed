@@ -148,7 +148,7 @@ COPY ckpts/model_316.pt /workspace/model_316.pt
 
 COPY ckpts/model_319.pt /workspace/model_319.pt
 
-COPY ckpts/model_321.pt /workspace/model_321.pt         
+COPY ckpts/model_321.pt /workspace/model_321.pt
 COPY ckpts/model_322.pt /workspace/model_322.pt
 COPY ckpts/model_323.pt /workspace/model_323.pt
 COPY ckpts/model_324.pt /workspace/model_324.pt
@@ -158,5 +158,3 @@ COPY ckpts/model_326.pt /workspace/model_326.pt
 
 # Default command
 CMD ["/bin/bash"]
-
-

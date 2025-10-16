@@ -15,9 +15,11 @@ TTD: extract residue too
 """
 
 
+import re
+
 import torch
 from Bio.PDB import MMCIFParser
-import re
+
 
 def parse_cif_backbone(cif_path: str):
     """
@@ -64,14 +66,14 @@ def parse_cif_backbone(cif_path: str):
 def parse_alphafold2_cif(cif_path: str):
     """
     Parses an AlphaFold2 CIF file to extract backbone coordinates and pLDDT scores.
-    
+
     AlphaFold2 CIF files use the mmCIF format with structured data columns, where
     pLDDT scores are stored in the B-factor column. This function handles both
     PDB ATOM record format and mmCIF format.
-    
+
     Args:
         cif_path: The file path to the AlphaFold2 CIF file.
-        
+
     Returns:
         A tuple containing:
         - coords (torch.Tensor): A tensor of shape [L, 4, 3] containing the
@@ -82,14 +84,14 @@ def parse_alphafold2_cif(cif_path: str):
           three-letter code of the residue (e.g., "ALA", "CYS").
     """
     coords, plddt_scores, residue_types = [], [], []
-    
+
     with open(cif_path, 'r') as f:
         lines = f.readlines()
-    
+
     # Check if this is mmCIF format (AlphaFold2) or PDB ATOM format
     is_mmcif = False
     atom_lines = []
-    
+
     for line in lines:
         if line.startswith('ATOM') and not is_mmcif:
             # Check if this looks like mmCIF format (lots of columns)
@@ -99,21 +101,21 @@ def parse_alphafold2_cif(cif_path: str):
             atom_lines.append(line)
         elif line.startswith('ATOM'):
             atom_lines.append(line)
-    
+
     if not atom_lines:
         raise ValueError(f"No ATOM records found in {cif_path}")
-    
+
     # Group atoms by residue
     current_residue = None
     current_coords = {}
     current_plddt = None
     current_resname = None
-    
+
     for line in atom_lines:
         parts = line.split()
         if len(parts) < 11:
             continue
-        
+
         if is_mmcif:
             # mmCIF format: ATOM id type atom_name alt residue_name chain entity seq_id ins_code x y z occupancy b_factor ...
             # Example: ATOM 1 N N . MET A 1 1 ? -6.743 9.797 -14.974 1.0 58.00 ...
@@ -137,13 +139,13 @@ def parse_alphafold2_cif(cif_path: str):
                 temp_factor = float(parts[10])  # This is pLDDT in AlphaFold2 files
             except (ValueError, IndexError):
                 continue
-        
+
         # Only process backbone atoms
         if atom_name not in ['N', 'CA', 'C', 'O']:
             continue
-            
+
         residue_id = (res_seq, res_name)
-        
+
         # If we've moved to a new residue, save the previous one
         if current_residue is not None and residue_id != current_residue:
             if len(current_coords) == 4:  # All backbone atoms present
@@ -156,16 +158,16 @@ def parse_alphafold2_cif(cif_path: str):
                 coords.append(atom_coords)
                 plddt_scores.append(current_plddt)
                 residue_types.append(current_resname)
-            
+
             # Reset for new residue
             current_coords = {}
-        
+
         # Update current residue info
         current_residue = residue_id
         current_coords[atom_name] = [x, y, z]
         current_plddt = temp_factor
         current_resname = res_name
-    
+
     # Don't forget the last residue
     if current_residue is not None and len(current_coords) == 4:
         atom_coords = [
@@ -177,48 +179,48 @@ def parse_alphafold2_cif(cif_path: str):
         coords.append(atom_coords)
         plddt_scores.append(current_plddt)
         residue_types.append(current_resname)
-    
+
     if not coords:
         raise ValueError(f"No complete backbone residues found in {cif_path}")
-    
+
     # Convert to tensors
     coords = torch.tensor(coords, dtype=torch.float)      # [L, 4, 3]
     plddt_scores = torch.tensor(plddt_scores, dtype=torch.float)  # [L]
-    
+
     return coords, plddt_scores, residue_types
 
 
 def detect_file_type(file_path: str) -> str:
     """
     Detects whether a CIF file is from AlphaFold2 or a traditional PDB source.
-    
+
     Args:
         file_path: Path to the CIF file.
-        
+
     Returns:
         'alphafold2' if the file appears to be from AlphaFold2, 'pdb' otherwise.
     """
     try:
         with open(file_path, 'r') as f:
             first_lines = [f.readline() for _ in range(50)]
-        
+
         # Check for AlphaFold2 indicators
         for line in first_lines:
             if 'AlphaFold' in line or 'AF-' in line:
                 return 'alphafold2'
             if 'data_AF-' in line:  # AlphaFold2 data block
                 return 'alphafold2'
-        
+
         # Check if file uses ATOM records (AlphaFold2 format) vs mmCIF format
         for line in first_lines:
             if line.startswith('ATOM'):
                 return 'alphafold2'
             if line.startswith('_atom_site'):
                 return 'pdb'
-        
+
         # Default to PDB if we can't determine
         return 'pdb'
-        
+
     except Exception:
         # Default to PDB if we can't read the file
         return 'pdb'
@@ -227,10 +229,10 @@ def detect_file_type(file_path: str) -> str:
 def parse_cif_backbone_auto(cif_path: str):
     """
     Automatically detects the file type and parses accordingly.
-    
+
     Args:
         cif_path: The file path to the CIF file.
-        
+
     Returns:
         A tuple containing:
         - coords (torch.Tensor): Backbone coordinates [L, 4, 3]
@@ -239,12 +241,10 @@ def parse_cif_backbone_auto(cif_path: str):
         - source (str): 'pdb' or 'alphafold2'
     """
     file_type = detect_file_type(cif_path)
-    
+
     if file_type == 'alphafold2':
         coords, scores, residue_types = parse_alphafold2_cif(cif_path)
         return coords, scores, residue_types, 'alphafold2'
     else:
         coords, scores, residue_types = parse_cif_backbone(cif_path)
         return coords, scores, residue_types, 'pdb'
-
-

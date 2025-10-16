@@ -9,18 +9,19 @@ Each protein appears in multiple pickle files for random sampling without replac
 Usage:
     python create_af2_pkl_chunks.py --input_dir /path/to/af2_cifs --cluster_dir /path/to/af_clusters --output_dir /path/to/pkl_chunks
 """
-import os
-import sys
 import argparse
+import json
+import os
 import pickle
 import random
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from tqdm import tqdm
+import sys
 import traceback
-import json
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
+from tqdm import tqdm
 
 # Add parent directory for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

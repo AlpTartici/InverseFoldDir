@@ -1,8 +1,10 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
-import torch, functools
-from torch import nn
+import functools
+
+import torch
 import torch.nn.functional as F
+from torch import nn
 from torch_geometric.nn import MessagePassing
 from torch_scatter import scatter_add
 

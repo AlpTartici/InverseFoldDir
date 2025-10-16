@@ -177,9 +177,7 @@
     "max_workers": 1,
     "overwrite_predictions": true,
     "comparison_results_filename": "comparison_results.csv",
-    "output_file_patterns": [
-      "*.csv"
-    ],
+    "output_file_patterns": ["*.csv"],
     "distributed": {
       "enabled": false,
       "num_gpus": 1,

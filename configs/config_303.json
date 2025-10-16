@@ -49,8 +49,8 @@
       "12",
       "--num_layers_gvp",
       "21",
-      "--val_metric", 
-      "val_all", 
+      "--val_metric",
+      "val_all",
       "--num_message_layers",
       "20",
       "--num_layers_prediction",
@@ -117,8 +117,8 @@
       "0.25",
       "--time_based_struct_noise",
       "increasing",
-      "--val_metric", 
-      "val_all", 
+      "--val_metric",
+      "val_all",
       "--uncertainty_struct_noise_scaling",
       "--lambda_dssp_loss",
       "0.5"
@@ -191,9 +191,7 @@
     "max_workers": 1,
     "overwrite_predictions": true,
     "comparison_results_filename": "comparison_results.csv",
-    "output_file_patterns": [
-      "*.csv"
-    ],
+    "output_file_patterns": ["*.csv"],
     "distributed": {
       "enabled": false,
       "num_gpus": 1,
@@ -219,8 +217,6 @@
   "max_retries": 3,
   "_enhancement_notes": {
     "version": "time_sampling_configs_v1",
-    "changes": [
-      ""
-    ]
+    "changes": [""]
   }
 }

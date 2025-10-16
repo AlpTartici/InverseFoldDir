@@ -9,9 +9,9 @@ creating rich, fixed (non-learned) embeddings of a scalar value, in this case,
 time `t`. This is a crucial component in diffusion and flow-matching models.
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 
 
 class GaussianFourierProjection(nn.Module):

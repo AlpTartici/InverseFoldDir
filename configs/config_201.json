@@ -1,4 +1,4 @@
- {
+{
   "name": "config201",
   "description": "Config 201 - Time sampling strategy: exponential, alpha_range: 2, time_integration: film, protein subset evaluation",
   "base_output_dir": "../tmp",
@@ -172,9 +172,7 @@
     "max_workers": 1,
     "overwrite_predictions": true,
     "comparison_results_filename": "comparison_results.csv",
-    "output_file_patterns": [
-      "*.csv"
-    ],
+    "output_file_patterns": ["*.csv"],
     "distributed": {
       "enabled": false,
       "num_gpus": 1,

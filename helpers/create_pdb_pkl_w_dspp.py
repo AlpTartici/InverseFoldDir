@@ -1,14 +1,15 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
-from Bio.PDB import PDBParser, DSSP
-import sys
-import pickle
-from tqdm import tqdm
 import os
-from multiprocessing import Pool, cpu_count, Manager
-from functools import partial
+import pickle
+import sys
 import traceback
 import warnings
+from functools import partial
+from multiprocessing import Manager, Pool, cpu_count
+
+from Bio.PDB import DSSP, PDBParser
+from tqdm import tqdm
 
 # Suppress BioPython DSSP warnings about mmCIF validation
 warnings.filterwarnings("ignore", category=UserWarning, module="Bio.PDB.DSSP")

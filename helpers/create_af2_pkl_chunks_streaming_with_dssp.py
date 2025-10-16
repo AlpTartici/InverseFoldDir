@@ -10,33 +10,35 @@ Now includes DSSP secondary structure prediction on AlphaFold2 structures.
 Usage:
     python create_af2_pkl_chunks_streaming_with_dssp.py --input_dir /path/to/af2_cifs --cluster_dir /path/to/af_clusters --output_dir /path/to/pkl_chunks
 """
-import os
-import sys
 import argparse
+import json
+import os
 import pickle
 import random
-import numpy as np
-import tempfile
 import shutil
-import time
 import signal
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Iterator
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from tqdm import tqdm
-import json
-from contextlib import contextmanager
+import sys
+import tempfile
+import time
 import warnings
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Dict, Iterator, List, Optional, Tuple
+
+import numpy as np
+from tqdm import tqdm
 
 # Add parent directory for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data.cif_parser import parse_cif_backbone_auto
+import traceback
 
 # BioPython imports for DSSP
-from Bio.PDB import PDBParser, DSSP, PDBIO, Structure, Model, Chain, Residue, Atom
+from Bio.PDB import DSSP, PDBIO, Atom, Chain, Model, PDBParser, Residue, Structure
 from Bio.PDB.mmcifio import MMCIFIO
-import traceback
+
+from data.cif_parser import parse_cif_backbone_auto
 
 # Suppress BioPython DSSP warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="Bio.PDB.DSSP")

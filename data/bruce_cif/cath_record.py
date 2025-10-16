@@ -2,14 +2,14 @@
 `cath-domain-seqs.fa`."""
 
 import re
-
 from typing import Tuple
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-
 from Bio.SeqRecord import SeqRecord
+from cif_file_errors import EndBeforeStartError, MissingEndsError, MissingStartsError
+from custom_types import ChainData, ScrapedChainData
 
 from data.bruce_cif.chain_filters import (
     _get_cath_bridge_pairs,
@@ -18,15 +18,6 @@ from data.bruce_cif.chain_filters import (
     _get_cath_residue_data,
     _get_cath_secondary_structure,
     _get_cath_site_data,
-)
-from cif_file_errors import (
-    EndBeforeStartError,
-    MissingEndsError,
-    MissingStartsError,
-)
-from custom_types import (
-    ChainData,
-    ScrapedChainData,
 )
 
 # Parses the CATH domain name into its component parts

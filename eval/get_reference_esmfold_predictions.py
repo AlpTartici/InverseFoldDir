@@ -1,13 +1,13 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
-import torch
-from transformers import EsmForProteinFolding, AutoTokenizer
-
-import biotite.structure.io as bsio
-from tqdm import tqdm
 import os
 import signal
 from contextlib import contextmanager
+
+import biotite.structure.io as bsio
+import torch
+from tqdm import tqdm
+from transformers import AutoTokenizer, EsmForProteinFolding
 
 # print if cuda is available
 if torch.cuda.is_available():

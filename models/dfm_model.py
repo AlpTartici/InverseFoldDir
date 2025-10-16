@@ -1,17 +1,17 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
-import torch
-from torch import nn
-import torch.nn.functional as F
-
 import sys
+
+import torch
+import torch.nn.functional as F
+from torch import nn
 
 sys.path.append("..")
 
+from data.dssp_constants import DSSP_TO_IDX, FIXED_DSSP_CLASS_WEIGHTS, NUM_DSSP_CLASSES
 from features.time_embed import GaussianFourierProjection
 from flow.dirichlet_flow import DirichletConditionalFlow
 from models.gnn import InverseFoldGVP
-from data.dssp_constants import NUM_DSSP_CLASSES, DSSP_TO_IDX, FIXED_DSSP_CLASS_WEIGHTS
 
 
 class DFMNodeClassifier(nn.Module):

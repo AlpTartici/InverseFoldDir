@@ -16,33 +16,33 @@ It handles:
 - Progress tracking
 """
 
-import os
-import sys
-import json
-import time
+import argparse
 import glob
+import json
+import logging
+import os
 import shutil
 import signal
-import logging
-import argparse
 import subprocess
-from pathlib import Path
-from datetime import datetime
-from typing import Dict, List, Optional, Any, Tuple
+import sys
+import time
 from dataclasses import asdict
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from pipeline_config import (
-    PipelineConfig,
-    DEFAULT_CONFIG,
-    CONFIGS,
-    TrainingConfig,
-    SamplingConfig,
-    EvaluationConfig,
-)
 from config_loader import ConfigLoader, ConfigurationError
+from pipeline_config import (
+    CONFIGS,
+    DEFAULT_CONFIG,
+    EvaluationConfig,
+    PipelineConfig,
+    SamplingConfig,
+    TrainingConfig,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -1725,8 +1725,8 @@ def validate_environment():
 
     try:
         sys.path.append(eval_dir)
-        from structure_predictor import BatchStructurePredictor
         from structure_comparator import StructureComparator
+        from structure_predictor import BatchStructurePredictor
     except ImportError as e:
         logger.error(f"Failed to import evaluation modules: {e}")
         return False

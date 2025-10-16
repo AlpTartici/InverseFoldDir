@@ -1,15 +1,13 @@
 """Holds utility functions for the `.cif_file` module"""
 
 import logging
-
 from typing import Dict, List, Sequence
 
 import pandas as pd
-
 from Bio import SeqIO
+from custom_types import CitationInfo
 
 from data.bruce_cif.cath_record import CATHRecord
-from custom_types import CitationInfo
 
 
 def _missing_to_empty_str(val: str) -> str:

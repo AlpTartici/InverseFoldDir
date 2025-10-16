@@ -19,7 +19,7 @@ echo "============================================="
 echo "Batch Processing from CSV"
 echo "============================================="
 echo "CSV File: $CSV_FILE"
-echo "Output Directory: $OUTPUT_DIR"  
+echo "Output Directory: $OUTPUT_DIR"
 echo "Sampling Steps: $STEPS"
 echo "Flow Temperature: $FLOW_TEMP"
 echo "Batch Size: $BATCH_SIZE"
@@ -31,7 +31,7 @@ if [ ! -f "$CSV_FILE" ]; then
     echo "Error: CSV file '$CSV_FILE' not found!"
     echo ""
     echo "Creating example CSV file..."
-    
+
     # Create example CSV file
     cat > "$CSV_FILE" << 'EOF'
 mutant,mutated_sequence,DMS_score,DMS_score_bin,mask-positions,protein
@@ -48,7 +48,7 @@ EOF
     echo "CSV Format Requirements:"
     echo "  - mutant: Mutation identifier"
     echo "  - mutated_sequence: Sequence with mutations (optional)"
-    echo "  - DMS_score: Deep Mutational Scanning score"  
+    echo "  - DMS_score: Deep Mutational Scanning score"
     echo "  - DMS_score_bin: Score category (low/medium/high)"
     echo "  - mask-positions: Positions to mask (e.g., '45' or 'D45')"
     echo "  - protein: UniProt ID"
@@ -62,7 +62,7 @@ if [ -f "$CSV_FILE" ]; then
     echo "  Total mutations: $mutation_count"
     echo "  Estimated batches: $(echo "($mutation_count + $BATCH_SIZE - 1) / $BATCH_SIZE" | bc)"
     echo ""
-    
+
     echo "Sample entries (first 5 lines):"
     head -n 6 "$CSV_FILE" | column -t -s ','
     echo ""
@@ -101,22 +101,22 @@ echo ""
 # Show processing summary if results exist
 if [ -f "$OUTPUT_DIR/batch_processing_sequences.csv" ]; then
     echo "Batch Processing Results:"
-    
+
     # Count results
     total_processed=$(tail -n +2 "$OUTPUT_DIR/batch_processing_sequences.csv" | wc -l)
     echo "Total mutations processed: $total_processed"
-    
+
     # Show sample results
     if [ $total_processed -gt 0 ]; then
         echo ""
         echo "Sample results (first 3):"
         head -n 4 "$OUTPUT_DIR/batch_processing_sequences.csv" | column -t -s ','
-        
+
         # Basic accuracy statistics if available
         if command -v awk > /dev/null; then
             echo ""
             echo "Quick Statistics:"
-            
+
             # Average accuracy (if accuracy column exists)
             avg_accuracy=$(tail -n +2 "$OUTPUT_DIR/batch_processing_sequences.csv" | awk -F',' '
                 BEGIN {sum=0; count=0}
@@ -126,14 +126,14 @@ if [ -f "$OUTPUT_DIR/batch_processing_sequences.csv" ]; then
             echo "  Average accuracy: ${avg_accuracy}%"
         fi
     fi
-    
+
     echo ""
     echo "Analysis Recommendations:"
     echo "  1. Compare predictions across DMS score bins"
     echo "  2. Analyze position-specific accuracy patterns"
     echo "  3. Correlate predictions with experimental scores"
     echo "  4. Look for systematic biases or trends"
-    
+
     echo ""
     echo "Next Steps for Analysis:"
     echo "  python analysis_scripts/analyze_batch_results.py $OUTPUT_DIR"

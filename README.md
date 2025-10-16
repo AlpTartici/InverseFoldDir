@@ -69,6 +69,7 @@ chmod +x install_inv_fold_dir.sh
 ```
 
 The script will:
+
 - Create the conda environment
 - Install PyTorch with CUDA 12.6 support
 - Install PyTorch Geometric and all extensions
@@ -105,6 +106,7 @@ print('Setup complete!')
 ### Alternative Methods (Legacy)
 
 #### Method A: Cross-platform environment
+
 ```bash
 # Create environment from the exact tested configuration
 conda env create -f inv_fold_dir_environment_cross_platform.yml
@@ -115,6 +117,7 @@ python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda
 ```
 
 #### Option B: Alternative environment files
+
 ```bash
 # Use the main environment configuration
 conda env create -f inv_fold_environment.yml
@@ -127,6 +130,7 @@ conda activate inv_fold
 ```
 
 #### Option C: Cross-platform compatible installation
+
 ```bash
 # For systems where the exact environment export doesn't work
 conda env create -f inv_fold_dir_environment.yml
@@ -207,6 +211,7 @@ The repository includes several interactive notebooks:
 ## Quick Usage Examples
 
 ### Full Sequence Sampling
+
 Generate complete sequences conditioned on protein backbone structure:
 
 ```bash
@@ -224,6 +229,7 @@ python sample.py --pdb_input 1fcd.C --ensemble_size 5 --steps 20
 ```
 
 ### Sequence Inpainting
+
 Predict specific amino acids while keeping others fixed:
 
 ```bash
@@ -248,16 +254,19 @@ python inpainting.py --pdb_input 1abc --mask-ratio 0.15
 ## Sampling Modes
 
 ### 1. Full Sequence Sampling
+
 - **Purpose**: Generate complete amino acid sequences that fold to given structures
 - **Use Cases**: De novo protein design, sequence optimization
 - **Command**: `cd training && python sample.py`
 
 ### 2. Sequence Inpainting
+
 - **Purpose**: Predict masked positions while conditioning on known residues
 - **Use Cases**: Variant effect prediction, protein completion, mutation design
 - **Command**: `cd training && python inpainting.py`
 
 ### 3. Ensemble Sampling
+
 - **Purpose**: Generate multiple structural variants for robust predictions
 - **Use Cases**: Uncertainty quantification, consensus design
 - **Parameters**: `--ensemble_size`, `--ensemble_consensus_strength`
@@ -269,6 +278,7 @@ python inpainting.py --pdb_input 1abc --mask-ratio 0.15
 Ready-to-use shell scripts are provided in `example_scripts_for_prediction/`:
 
 ### 1. Full Sequence Sampling
+
 ```bash
 #!/bin/bash
 # examples_scripts_for_prediction/full_sampling.sh
@@ -288,6 +298,7 @@ echo "Full sequence sampling completed. Results saved to ./results/full_sampling
 ```
 
 ### 2. Inpainting with Position+Validation Format
+
 ```bash
 #!/bin/bash
 # examples_scripts_for_prediction/inpainting_validated.sh
@@ -307,6 +318,7 @@ echo "Validated inpainting completed. Results saved to ./results/inpainting_vali
 ```
 
 ### 3. Inpainting with Position-Only Format
+
 ```bash
 #!/bin/bash
 # examples_scripts_for_prediction/inpainting_positions.sh
@@ -327,6 +339,7 @@ echo "Position-based inpainting completed. Results saved to ./results/inpainting
 ```
 
 ### 4. Template-Based Inpainting
+
 ```bash
 #!/bin/bash
 # examples_scripts_for_prediction/template_inpainting.sh
@@ -346,6 +359,7 @@ echo "Template inpainting completed. Results saved to ./results/template_inpaint
 ```
 
 ### 5. Batch Processing from CSV
+
 ```bash
 #!/bin/bash
 # examples_scripts_for_prediction/batch_processing.sh
@@ -371,17 +385,21 @@ echo "Batch processing completed. Results saved to ./results/batch_processing"
 ### Mask Position Formats
 
 #### 1. Position Only Format
+
 ```bash
 --mask-positions "45,67,89"
 ```
+
 - **Usage**: Mask these positions without validation
 - **Format**: Comma-separated position numbers (0-indexed)
 - **Example**: Position 45, 67, and 89 will be masked
 
 #### 2. Position + Validation Format
+
 ```bash
 --mask-positions "D45,Y67,K89"
 ```
+
 - **Usage**: Mask positions 45, 67, 89 but first verify amino acids
 - **Format**: `{amino_acid}{position}` format
 - **Validation**: Position 45 must have D, position 67 must have Y, position 89 must have K
@@ -400,6 +418,7 @@ D45A,MVQPQVQHPIQXIKLMNPQ...,0.8,medium,D45,PIN1_HUMAN
 ```
 
 **Required columns:**
+
 - `mutant`: Mutation identifier
 - `mutated_sequence`: Sequence with mutations (optional for validation)
 - `DMS_score`: Deep Mutational Scanning score
@@ -453,11 +472,13 @@ D45A,MVQPQVQHPIQXIKLMNPQ...,0.8,medium,D45,PIN1_HUMAN
 #### Parameter Guidelines:
 
 **Temperature (`--flow_temp`)**:
+
 - **Lower values (0.1-0.3)**: More conservative predictions with better average structural recovery but reduced sequence diversity
 - **Higher values (1.0-2.0)**: More diverse predictions but may compromise average structural recovery
 - **Recommended**: Start with 0.2-0.3 for most applications
 
 **Dirichlet Concentration (`--dirichlet_concentration`)**:
+
 - **Standard value**: 1.0 (default balanced setting)
 - **Higher values (>1.0)**: Reduces noise variance, leading to less diversity but slight improvement in structural recovery
 - **Lower values (<1.0)**: Increases noise variance, leading to more diversity but potentially lower structural recovery
@@ -501,12 +522,14 @@ D45A,MVQPQVQHPIQXIKLMNPQ...,0.8,medium,D45,PIN1_HUMAN
 ## Output Formats
 
 ### 1. Sequence Files (CSV)
+
 ```csv
 structure_idx,structure_name,length,predicted_sequence,true_sequence,accuracy
 0,1abc,150,MKFLVLLFNISCV...,MKFLVLLFNISCV...,94.67
 ```
 
 ### 2. Probability Distributions (NPZ)
+
 ```python
 import numpy as np
 
@@ -520,6 +543,7 @@ predicted = data['struct_0_predicted_indices']  # Predictions
 ```
 
 ### 3. Trajectory Analysis (JSON)
+
 ```json
 {
   "1abc": {
@@ -530,8 +554,8 @@ predicted = data['struct_0_predicted_indices']  # Predictions
           "most_likely_amino_acid": "M",
           "current_probability": 0.456789,
           "amino_acid_breakdown": {
-            "A": {"predicted_prob": 0.023, "current_prob": 0.045},
-            "M": {"predicted_prob": 0.678, "current_prob": 0.456}
+            "A": { "predicted_prob": 0.023, "current_prob": 0.045 },
+            "M": { "predicted_prob": 0.678, "current_prob": 0.456 }
           }
         }
       ],
@@ -543,6 +567,7 @@ predicted = data['struct_0_predicted_indices']  # Predictions
 ```
 
 ### 4. Metadata Files (TXT)
+
 ```
 PROTEIN SEQUENCE SAMPLING METADATA
 ==================================================
@@ -596,8 +621,7 @@ python train.py \
     --epochs 100
 ```
 
-
-```
+````
 
 ---
 
@@ -615,9 +639,10 @@ python train.py \
 
 # Reduce integration steps
 --steps 10
-```
+````
 
 #### 2. Model Loading Errors
+
 ```bash
 # Navigate to training directory
 cd training
@@ -633,6 +658,7 @@ python sample.py --pdb_input 1abc --verbose
 ```
 
 #### 3. PDB Download Issues
+
 ```bash
 # Use local files instead
 --pdb_input /path/to/local/file.pdb
@@ -645,6 +671,7 @@ curl -I https://files.rcsb.org/download/1abc.pdb
 ```
 
 #### 4. Dependency Conflicts
+
 ```bash
 # Start with the recommended tested environment
 conda env create -f inv_fold_dir_environment_cross_platform.yml
@@ -674,6 +701,7 @@ conda env remove -n inv_fold
 ```
 
 #### 5. Performance Issues
+
 ```bash
 # Enable GPU acceleration
 nvidia-smi  # Check GPU availability
@@ -705,11 +733,11 @@ if 'args' in checkpoint:
 
 ### Performance Benchmarks
 
-| Configuration | Speed (seq/min) | Memory (GB) | Quality |
-|--------------|-----------------|-------------|---------|
-| CPU, steps=10 | 5 | 2 | Basic |
-| GPU, steps=20 | 50 | 4 | Good |
-| GPU, ensemble=5 | 25 | 8 | Excellent |
+| Configuration   | Speed (seq/min) | Memory (GB) | Quality   |
+| --------------- | --------------- | ----------- | --------- |
+| CPU, steps=10   | 5               | 2           | Basic     |
+| GPU, steps=20   | 50              | 4           | Good      |
+| GPU, ensemble=5 | 25              | 8           | Excellent |
 
 ---
 
@@ -736,7 +764,7 @@ TBD
 
 ## Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
+This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit [Contributor License Agreements](https://cla.opensource.microsoft.com).
 
@@ -756,7 +784,6 @@ trademarks or logos is subject to and must follow
 Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
 Any use of third-party trademarks or logos are subject to those third-party's policies.
 
-
 ---
 
 ## Support
@@ -764,4 +791,3 @@ Any use of third-party trademarks or logos are subject to those third-party's po
 - **Issues**: [GitHub Issues](https://github.com/your-username/inverse-folding/issues)
 
 ---
-

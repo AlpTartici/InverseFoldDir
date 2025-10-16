@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
-# Inpainting with Position-Only Format Example Script  
+# Inpainting with Position-Only Format Example Script
 # Predict masked positions without validation (faster, more flexible)
 
 # Set script options
@@ -21,7 +21,7 @@ echo "Position-Only Inpainting"
 echo "============================================="
 echo "PDB Input: $PDB_INPUT"
 echo "Mask Positions: $MASK_POSITIONS (no validation)"
-echo "Output Directory: $OUTPUT_DIR"  
+echo "Output Directory: $OUTPUT_DIR"
 echo "Sampling Steps: $STEPS"
 echo "Flow Temperature: $FLOW_TEMP"
 echo "Ensemble Size: $ENSEMBLE_SIZE"
@@ -32,7 +32,7 @@ echo "  16 = Mask position 16 (0-indexed)"
 echo "  42 = Mask position 42 (0-indexed)"
 echo ""
 echo "Benefits of Position-Only Format:"
-echo "  - No amino acid validation required"  
+echo "  - No amino acid validation required"
 echo "  - Faster execution (no structure checking)"
 echo "  - Good for exploratory design"
 echo "  - Works with any position numbers"
@@ -63,7 +63,7 @@ echo "Results saved to: $OUTPUT_DIR"
 echo ""
 echo "Output files:"
 echo "  - Sequences: $OUTPUT_DIR/inpainting_positions_sequences.csv"
-echo "  - Probabilities: $OUTPUT_DIR/*_probabilities.npz"  
+echo "  - Probabilities: $OUTPUT_DIR/*_probabilities.npz"
 echo "  - Detailed JSON: $OUTPUT_DIR/*_detailed_predictions.json"
 echo "  - Metadata: $OUTPUT_DIR/*_metadata.txt"
 echo ""
@@ -71,27 +71,27 @@ echo ""
 # Show quick results summary if files exist
 if [ -f "$OUTPUT_DIR/inpainting_positions_sequences.csv" ]; then
     echo "Inpainting Results Summary:"
-    
+
     # Count successful predictions
     total_sequences=$(tail -n +2 "$OUTPUT_DIR/inpainting_positions_sequences.csv" | wc -l)
     echo "Total sequences processed: $total_sequences"
-    
+
     # Show sample results
     if [ $total_sequences -gt 0 ]; then
         echo ""
         echo "Sample results:"
         head -n 4 "$OUTPUT_DIR/inpainting_positions_sequences.csv" | column -t -s ','
     fi
-    
+
     echo ""
     echo "Ensemble Information:"
     echo "  - Used $ENSEMBLE_SIZE structural variants"
     echo "  - Consensus strength: 0.4 (balanced diversity/agreement)"
     echo "  - Method: arithmetic averaging"
-    
+
     echo ""
     echo "Analysis Tips:"
     echo "  1. Compare predictions across ensemble members"
-    echo "  2. Look at confidence scores in detailed JSON" 
+    echo "  2. Look at confidence scores in detailed JSON"
     echo "  3. Check probability distributions for uncertainty"
 fi

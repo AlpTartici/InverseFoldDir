@@ -10,18 +10,21 @@ processing the protein graphs. It is a stack of Geometric Vector Perceptron (GVP
 convolutional layers.
 """
 
+import sys
+
+import torch
 import torch.nn.functional as F
 from torch import nn
-import torch
-import sys
+
 sys.path.append('..')
 from gvp import GVP, LayerNorm
 from models.attention_layer import AttentionLayer
 from models.equivariant_time_gvp import (
-    HybridConditionedGVP, 
+    HybridConditionedGVP,
     HybridConditionedGVPWithResidual,
-    HybridConditionedLayerNorm
+    HybridConditionedLayerNorm,
 )
+
 
 class GVPWithResidual(nn.Module):
     """
@@ -32,16 +35,16 @@ class GVPWithResidual(nn.Module):
         super().__init__()
         self.gvp = GVP(node_dims, hidden_dims, activations=(F.relu, None))
         self.dropout = nn.Dropout(dropout)
-        
+
     def forward(self, x):
         # x is a tuple (scalar_features, vector_features)
         identity_s, identity_v = x
         out_s, out_v = self.gvp(x)
-        
+
         # Apply residual connection
         out_s = identity_s + self.dropout(out_s)
         out_v = identity_v + out_v  # No dropout on vectors to preserve direction
-        
+
         return out_s, out_v
 
 class ResidueGNN(nn.Module):
@@ -76,7 +79,7 @@ class ResidueGNN(nn.Module):
             node_dims (tuple): A tuple (s, v) for the dimensions of scalar and
                                vector node features.
             edge_dims (tuple): A tuple (s, v) for the dimensions of scalar and
-                               vector edge features. Note that the vector part is 
+                               vector edge features. Note that the vector part is
                                not used by the AttentionLayer.
             hidden_dims (tuple): A tuple (s, v) for the dimensions of the hidden
                                  scalar and vector representations.
@@ -94,7 +97,7 @@ class ResidueGNN(nn.Module):
             architecture (str): Architecture type - 'interleaved'.
         """
         super().__init__()
-        
+
         # Handle backward compatibility for layer counts
         if num_embed_layers is None:
             if num_layers is not None:
@@ -103,7 +106,7 @@ class ResidueGNN(nn.Module):
                 num_embed_layers = 4  # Default value
         if num_message_layers is None:
             num_message_layers = 1  # Default value
-            
+
         # Store configuration
         self.architecture = architecture
         self.use_predictions = use_predictions
@@ -116,11 +119,11 @@ class ResidueGNN(nn.Module):
         self.edge_dims = edge_dims
         self.dropout_rate = dropout
         self.use_qkv = use_qkv
-        
+
         # Validate architecture type
         if architecture not in ['interleaved']:
             raise ValueError(f"Unknown architecture '{architecture}'. Must be 'interleaved'.")
-        
+
         # Calculate input dimensions based on prediction integration
         # Note: For hybrid conditioning, predictions are handled within the layers
         if use_time_conditioning:
@@ -147,7 +150,7 @@ class ResidueGNN(nn.Module):
                 augmented_node_dims = node_dims
                 if use_predictions:
                     self.pred_proj = nn.Linear(K, node_dims[0])
-        
+
         self._build_interleaved_architecture(
                 augmented_node_dims, num_embed_layers, num_message_layers
         )
@@ -158,12 +161,12 @@ class ResidueGNN(nn.Module):
     def _build_interleaved_architecture(self, augmented_node_dims, num_embed_layers, num_message_layers):
         """
         Build the interleaved architecture: GVP and Attention layers interleaved.
-        
+
         Algorithm:
         1. Space attention layers one GVP+LayerNorm apart
         2. Reserve early positions for GVP blocks when num_gvp - num_attention > 1
         3. Always end with GVP+LayerNorm
-        
+
         Examples:
         - 4 GVP + 2 Attention: GVP₁+LN → GVP₂+LN → Attn₁ → GVP₃+LN → Attn₂ → GVP₄+LN
         - 4 GVP + 3 Attention: GVP₁+LN → Attn₁ → GVP₂+LN → Attn₂ → GVP₃+LN → Attn₃ → GVP₄+LN
@@ -172,15 +175,15 @@ class ResidueGNN(nn.Module):
             raise ValueError("Need at least 1 GVP layer for interleaved architecture")
         if num_message_layers >= num_embed_layers:
             raise ValueError(f"Too many attention layers ({num_message_layers}) for GVP layers ({num_embed_layers}). Need at least one more GVP than attention layers.")
-        
+
         # Calculate number of early GVP blocks to reserve
         num_early_gvp = max(0, num_embed_layers - num_message_layers - 1)
-        
+
         # Build interleaved sequence
         interleaved_layers = []
         gvp_count = 0
         attention_count = 0
-        
+
         # Add early GVP blocks first
         for i in range(num_early_gvp):
             gvp_layer, layer_norm = self._create_gvp_block(
@@ -190,11 +193,11 @@ class ResidueGNN(nn.Module):
             )
             interleaved_layers.extend([gvp_layer, layer_norm])
             gvp_count += 1
-        
+
         # Interleave remaining GVP and attention layers
         remaining_gvp = num_embed_layers - gvp_count
         remaining_attention = num_message_layers
-        
+
         while remaining_gvp > 0 or remaining_attention > 0:
             # Add GVP if we have remaining
             if remaining_gvp > 0:
@@ -206,7 +209,7 @@ class ResidueGNN(nn.Module):
                 interleaved_layers.extend([gvp_layer, layer_norm])
                 gvp_count += 1
                 remaining_gvp -= 1
-                
+
             # Add attention if we have remaining and it won't be the last layer
             if remaining_attention > 0 and remaining_gvp > 0:
                 attention_layer = AttentionLayer(
@@ -217,9 +220,9 @@ class ResidueGNN(nn.Module):
                 interleaved_layers.append(attention_layer)
                 attention_count += 1
                 remaining_attention -= 1
-        
+
         self.interleaved_layers = nn.ModuleList(interleaved_layers)
-        
+
         print(f"Built interleaved architecture: {gvp_count} GVP layers, {attention_count} attention layers")
 
     def _create_gvp_block(self, in_dims, out_dims, is_first_layer=False):
@@ -251,24 +254,24 @@ class ResidueGNN(nn.Module):
             else:
                 gvp_layer = GVPWithResidual(in_dims, out_dims, dropout=self.dropout_rate)
             layer_norm = LayerNorm(out_dims)
-            
+
         return gvp_layer, layer_norm
 
 
     def _integrate_predictions(self, node_s, predictions):
         """
         Integrate prediction probabilities with node scalar features.
-        
+
         Args:
             node_s: Original scalar node features [N, node_dim_s]
             predictions: Current prediction probabilities [N, K]
-            
+
         Returns:
             Enhanced node features
         """
         if not self.use_predictions:
             return node_s
-            
+
         # Predictions should never be None when use_predictions=True
         # In the actual training/inference pipeline, predictions are always provided
         # either from ground truth or initialized as uniform probabilities
@@ -278,29 +281,29 @@ class ResidueGNN(nn.Module):
                 "In the actual training pipeline, predictions are always provided. "
                 "If you're testing, either set use_predictions=False or provide actual predictions."
             )
-            
+
         # Use prediction probabilities directly (no conversion needed)
         if self.prediction_integration == 'concat':
             # Project probabilities and concatenate
             pred_features = self.pred_proj(predictions)  # [N, proj_dim]
             return torch.cat([node_s, pred_features], dim=-1)
-            
+
         elif self.prediction_integration == 'add':
             # Project probabilities to same dimension and add
             pred_features = self.pred_proj(predictions)  # [N, node_dim_s]
             return node_s + pred_features
-            
+
         elif self.prediction_integration == 'gated':
             # Use gating mechanism to selectively combine
             pred_features = self.pred_proj(predictions)  # [N, node_dim_s]
             gate_input = torch.cat([predictions, node_s], dim=-1)
             gate = self.pred_gate(gate_input)  # [N, node_dim_s]
             return gate * pred_features + (1 - gate) * node_s
-            
+
         else:
             return node_s
 
-    def forward(self, node_s, node_v, edge_index, edge_s, edge_v, 
+    def forward(self, node_s, node_v, edge_index, edge_s, edge_v,
                 predictions=None, time_emb=None):
         """
         Performs the forward pass through the GNN with prediction and time conditioning.
@@ -321,22 +324,22 @@ class ResidueGNN(nn.Module):
         """
         if self.use_time_conditioning and time_emb is None:
             raise ValueError("time_emb is required when use_time_conditioning=True")
-        
+
         return self._forward_interleaved(node_s, node_v, edge_index, edge_s, edge_v, predictions, time_emb)
-        
+
 
     def _forward_interleaved(self, node_s, node_v, edge_index, edge_s, edge_v, predictions, time_emb):
         """
         Forward pass for interleaved architecture with GVP-to-GVP residuals.
-        
+
         GVP layers form the main pathway with residual connections.
         Attention layers are inserted between GVP layers to add structural context.
         """
         hs, hv = node_s, node_v
-        
+
         # Track GVP residuals - attention layers don't participate in residuals
         gvp_residual_s, gvp_residual_v = None, None
-        
+
         for layer in self.interleaved_layers:
             if isinstance(layer, (GVP, HybridConditionedGVP)):
                 # First GVP layer or non-residual GVP
@@ -352,10 +355,10 @@ class ResidueGNN(nn.Module):
                             hs, hv = layer((hs, hv))
                     else:
                         hs, hv = layer((hs, hv))
-                
+
                 # Store for next GVP residual
                 gvp_residual_s, gvp_residual_v = hs, hv
-                
+
             elif isinstance(layer, (GVPWithResidual, HybridConditionedGVPWithResidual)):
                 # GVP with residual connection
                 if gvp_residual_s is not None:
@@ -364,7 +367,7 @@ class ResidueGNN(nn.Module):
                         out_s, out_v = layer((hs, hv), predictions=predictions, time_emb=time_emb)
                     else:
                         out_s, out_v = layer((hs, hv))
-                    
+
                     # Add residual connection from previous GVP
                     hs = out_s + gvp_residual_s
                     hv = out_v + gvp_residual_v
@@ -374,33 +377,33 @@ class ResidueGNN(nn.Module):
                         hs, hv = layer((hs, hv), predictions=predictions, time_emb=time_emb)
                     else:
                         hs, hv = layer((hs, hv))
-                
+
                 # Update residual for next GVP
                 gvp_residual_s, gvp_residual_v = hs, hv
-                
+
             elif isinstance(layer, (LayerNorm, HybridConditionedLayerNorm)):
                 # Layer normalization
                 if isinstance(layer, HybridConditionedLayerNorm):
                     hs, hv = layer((hs, hv))
                 else:
                     hs, hv = layer((hs, hv))
-                    
+
             elif isinstance(layer, AttentionLayer):
                 # Attention layer - no residual connection, just enhance features
-                h_s_out, h_v_out = layer(x_s=hs, 
-                                         x_v=hv, 
-                                         edge_index=edge_index, 
+                h_s_out, h_v_out = layer(x_s=hs,
+                                         x_v=hv,
+                                         edge_index=edge_index,
                                          edge_attr_s=edge_s,
                                          edge_attr_v=edge_v)  # NOW PASSING EDGE VECTORS!
-                
+
                 # Update features (no residual for attention)
                 hs = h_s_out
                 hv = h_v_out
-                
+
                 # Apply activation and dropout after attention
                 hs = F.leaky_relu(hs)
                 hs = self.dropout(hs)
-                
+
                 # Note: gvp_residual stays the same - attention doesn't update the GVP pathway
 
         return hs, hv

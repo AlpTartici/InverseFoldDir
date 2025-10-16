@@ -99,8 +99,8 @@
       "--use_virtual_node",
       "--recycle_steps",
       "1",
-      "--val_metric", 
-      "val_all", 
+      "--val_metric",
+      "val_all",
       "--ratio_af2_pdb",
       "23",
       "--max_batches_per_epoch",
@@ -188,9 +188,7 @@
     "max_workers": 1,
     "overwrite_predictions": true,
     "comparison_results_filename": "comparison_results.csv",
-    "output_file_patterns": [
-      "*.csv"
-    ],
+    "output_file_patterns": ["*.csv"],
     "distributed": {
       "enabled": false,
       "num_gpus": 1,
@@ -216,8 +214,6 @@
   "max_retries": 3,
   "_enhancement_notes": {
     "version": "time_sampling_configs_v1",
-    "changes": [
-      ""
-    ]
+    "changes": [""]
   }
 }

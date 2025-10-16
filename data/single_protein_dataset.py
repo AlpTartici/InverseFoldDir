@@ -8,8 +8,10 @@ This bypasses loading the entire dataset when only one protein is needed.
 
 import json
 import pickle
+
 import torch
 from torch.utils.data import Dataset
+
 from .graph_builder import GraphBuilder
 
 

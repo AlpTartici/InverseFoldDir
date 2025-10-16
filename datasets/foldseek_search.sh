@@ -30,14 +30,14 @@ query_files=$(ls "$QUERY_DIR")
 mkdir -p "$OUTPUT_DIR"
 for query_file in $query_files; do
     # get the first file in the list with relative path
-    #query_file=$(echo "$query_files" | head -n 1)   
+    #query_file=$(echo "$query_files" | head -n 1)
     # get the first file in the list with absolute path
-    query_file_abs=$(realpath "$QUERY_DIR"/"$query_file")    
+    query_file_abs=$(realpath "$QUERY_DIR"/"$query_file")
 
     # write foldseek easy search command with flag names
     # run foldseek easy search with the first file in the list
     # and the target database
-    # and save the results in the specified output directory   
+    # and save the results in the specified output directory
 
     echo "Running foldseek easy search on $query_file_abs"
 
@@ -46,13 +46,12 @@ for query_file in $query_files; do
         "$TARGET_DB" \
         "$OUTPUT_DIR"/testpdb_"$query_file".txt \
         "$OUTPUT_DIR"/tmp_fs_search \
-        --format-output "query,target,alntmscore,lddt,evalue,prob,alnlen" 
+        --format-output "query,target,alntmscore,lddt,evalue,prob,alnlen"
         #\
         #--gpu "$NUM_GPUS"
 
-    
+
 done
 
 # example run
 # ./foldseek_search.sh test_val_chain_pdbs pdb_pad foldseek_search_results 1
-

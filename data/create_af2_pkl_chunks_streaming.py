@@ -8,27 +8,29 @@ then creates chunks without loading everything into memory at once.
 Usage:
     python create_af2_pkl_chunks_streaming.py --input_dir /path/to/af2_cifs --cluster_dir /path/to/af_clusters --output_dir /path/to/pkl_chunks
 """
-import os
-import sys
 import argparse
+import json
+import os
 import pickle
 import random
-import numpy as np
-import tempfile
 import shutil
-import time
 import signal
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Iterator
+import sys
+import tempfile
+import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from tqdm import tqdm
-import json
 from contextlib import contextmanager
+from pathlib import Path
+from typing import Dict, Iterator, List, Optional, Tuple
+
+import numpy as np
+from tqdm import tqdm
 
 # Add parent directory for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from data.cif_parser import parse_cif_backbone_auto
+
 # (normalize_uncertainty import removed; not used here)
 
 
@@ -37,7 +39,7 @@ def timeout(duration):
     """Context manager for timing out operations."""
     def timeout_handler(signum, frame):
         raise TimeoutError(f"Operation timed out after {duration} seconds")
-    
+
     old_handler = signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(duration)
     try:
@@ -59,13 +61,13 @@ def extract_uniprot_id(cif_filename: str) -> str:
 def process_single_cif(cif_path: Path, max_length: int = 600, min_plddt: float = 70.0, parse_timeout: int = 60) -> Optional[Dict]:
     """
     Process a single AF2 CIF file into optimized format.
-    
+
     Args:
         cif_path: Path to CIF file
         max_length: Maximum protein length to include
         min_plddt: Minimum average pLDDT score to include (default: 70.0)
         parse_timeout: Maximum seconds to spend parsing each file (default: 60)
-        
+
     Returns:
         Dictionary with protein data or None if processing failed/filtered
     """
@@ -129,7 +131,7 @@ def process_single_cif(cif_path: Path, max_length: int = 600, min_plddt: float =
         }
 
         return uniprot_id, protein_data
-        
+
     except (FileNotFoundError, OSError, ValueError, TimeoutError):
         # Silent failure - let the worker handle logging to avoid stdout spam
         # TimeoutError will catch files that take too long to parse
@@ -200,15 +202,15 @@ def stream_proteins_from_temp_files(temp_files: List[str]) -> Iterator[Tuple[str
                 print(f"Error reading temp file {temp_file}: {e}")
 
 
-def create_pkl_chunks_streaming(temp_files: List[str], 
-                              output_dir: Path, 
+def create_pkl_chunks_streaming(temp_files: List[str],
+                              output_dir: Path,
                               total_proteins: int,
                               chunk_size: int = 1100,
                               coverage_per_protein: int = 10,
                               random_seed: int = 42) -> Dict:
     """
     Create pickle chunks by streaming from temporary files to avoid memory overload.
-    
+
     Args:
         temp_files: List of temporary files containing processed proteins
         output_dir: Directory to save pickle files
@@ -216,58 +218,58 @@ def create_pkl_chunks_streaming(temp_files: List[str],
         chunk_size: Number of proteins per pickle file
         coverage_per_protein: How many times each protein appears across files
         random_seed: Random seed for reproducible assignment
-        
+
     Returns:
         Statistics dictionary
     """
     print(f"Creating pickle chunks with {total_proteins} proteins (streaming mode)...")
     print(f"Target: {coverage_per_protein}x coverage, {chunk_size} proteins per chunk")
-    
+
     # Calculate number of chunks needed
     total_appearances = total_proteins * coverage_per_protein
     num_chunks = (total_appearances + chunk_size - 1) // chunk_size
-    
+
     print(f"Will create {num_chunks} pickle files")
-    
+
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Step 1: Create index mapping protein_id -> chunk assignments
     print("Creating protein-to-chunk assignments...")
     random.seed(random_seed)
-    
+
     protein_to_chunks = {}  # protein_id -> list of chunk_ids it should appear in
-    
+
     # For each protein, randomly assign it to 'coverage_per_protein' chunks
     for protein_id in range(total_proteins):
         # Randomly choose which chunks this protein will appear in
         assigned_chunks = random.sample(range(num_chunks), min(coverage_per_protein, num_chunks))
         protein_to_chunks[protein_id] = assigned_chunks
-    
+
     # Step 2: Initialize chunk files
     print("Initializing chunk files...")
     chunk_files = {}
     chunk_counts = [0] * num_chunks
-    
+
     for chunk_idx in range(num_chunks):
         chunk_path = output_dir / f"af2_chunk_{chunk_idx:06d}.pkl"
         chunk_files[chunk_idx] = {'path': chunk_path, 'proteins': {}}  # Change to dict
-    
+
     # Step 3: Stream proteins and assign to chunks
     print("Streaming proteins and building chunks...")
     protein_id = 0
-    
+
     for protein_key, protein_data in tqdm(stream_proteins_from_temp_files(temp_files), total=total_proteins, desc="Building chunks"):
         # Get chunk assignments for this protein
         assigned_chunks = protein_to_chunks.get(protein_id, [])
-        
+
         # Add protein to each assigned chunk (using protein_key as the dict key)
         for chunk_idx in assigned_chunks:
             chunk_files[chunk_idx]['proteins'][protein_key] = protein_data
             chunk_counts[chunk_idx] += 1
-        
+
         protein_id += 1
-        
+
         # Periodically flush chunks that are getting full to manage memory
         if protein_id % 10000 == 0:  # Every 10k proteins
             for chunk_idx in range(num_chunks):
@@ -275,26 +277,26 @@ def create_pkl_chunks_streaming(temp_files: List[str],
                     # Save and clear this chunk
                     chunk_path = chunk_files[chunk_idx]['path']
                     proteins = chunk_files[chunk_idx]['proteins']
-                    
+
                     with open(chunk_path, 'wb') as f:
                         pickle.dump(proteins, f, protocol=pickle.HIGHEST_PROTOCOL)
-                    
+
                     # Clear from memory
                     chunk_files[chunk_idx]['proteins'] = {}
                     print(f"Saved chunk {chunk_idx} ({len(proteins)} proteins)")
-    
+
     # Step 4: Save remaining chunks
     print("Saving remaining chunks...")
     chunk_stats = []
-    
+
     for chunk_idx in range(num_chunks):
         chunk_path = chunk_files[chunk_idx]['path']
         proteins = chunk_files[chunk_idx]['proteins']
-        
+
         if proteins:  # Only save if there are proteins left
             with open(chunk_path, 'wb') as f:
                 pickle.dump(proteins, f, protocol=pickle.HIGHEST_PROTOCOL)
-        
+
         # Collect stats
         if chunk_path.exists():
             chunk_stats.append({
@@ -305,7 +307,7 @@ def create_pkl_chunks_streaming(temp_files: List[str],
             })
             print(f"Final chunk {chunk_idx:6d}: {chunk_counts[chunk_idx]:4d} proteins, "
                   f"{chunk_stats[-1]['size_mb']:.1f}MB")
-    
+
     # Create metadata
     metadata = {
         'num_chunks': num_chunks,
@@ -316,20 +318,20 @@ def create_pkl_chunks_streaming(temp_files: List[str],
         'random_seed': random_seed,
         'chunk_stats': chunk_stats
     }
-    
+
     metadata_path = output_dir / "metadata.json"
     with open(metadata_path, 'w', encoding='utf-8') as f:
         json.dump(metadata, f, indent=2)
-    
+
     print(f"\nSaved metadata to {metadata_path}")
     print(f"Average chunk size: {np.mean([s['size_mb'] for s in chunk_stats]):.1f}MB")
-    
+
     return metadata
 
 
 def main():
     parser = argparse.ArgumentParser(description="Create AF2 pickle chunks for fast batch loading (memory-efficient)")
-    
+
     # Input/Output
     parser.add_argument('--input_dir', type=str, required=True,
                        help="Directory containing AF2 CIF files")
@@ -341,7 +343,7 @@ def main():
                        help="Directory to save pickle chunks")
     parser.add_argument('--temp_dir', type=str, default=None,
                        help="Temporary directory for intermediate files (default: system temp)")
-    
+
     # Processing parameters
     parser.add_argument('--max_length', type=int, default=600,
                        help="Maximum protein length (default: 600)")
@@ -353,13 +355,13 @@ def main():
                        help="Number of proteins per pickle file (default: 1100)")
     parser.add_argument('--coverage', type=int, default=10,
                        help="How many times each protein appears (default: 10)")
-    
+
     # Performance
     parser.add_argument('--num_workers', type=int, default=None,
                        help="Number of worker processes (default: CPU count)")
     parser.add_argument('--batch_size', type=int, default=1000,
                        help="Number of files to process per worker batch (default: 1000)")
-    
+
     # Other
     parser.add_argument('--random_seed', type=int, default=42,
                        help="Random seed for reproducible chunk assignment")
@@ -375,21 +377,21 @@ def main():
                        help="Just count files and estimate output size")
     parser.add_argument('--keep_temp_files', action='store_true',
                        help="Keep temporary files after processing (for debugging)")
-    
+
     args = parser.parse_args()
-    
+
     # Setup
     input_dir = Path(args.input_dir)
-    cluster_dir = Path(args.cluster_dir) 
+    cluster_dir = Path(args.cluster_dir)
     output_dir = Path(args.output_dir)
-    
+
     print(f"Input directory: {input_dir}", flush=True)
     print(f"Cluster directory: {cluster_dir}", flush=True)
-    
+
     # Load protein names from the specified flat members file
     flat_members_path = cluster_dir / args.flat_members_file
     print(f"Loading from: {flat_members_path}", flush=True)
-    
+
     print(f"Loading protein names from {flat_members_path}...", flush=True)
     try:
         flat_members = np.load(flat_members_path, mmap_mode='r')
@@ -398,7 +400,7 @@ def main():
     except (OSError, ValueError) as e:
         print(f"Error loading {args.flat_members_file}: {e}")
         return 1
-    
+
     # Construct CIF file paths using the same pattern as AF2Dataset
     print("Constructing CIF file paths...", flush=True)
     cif_files = []
@@ -407,16 +409,16 @@ def main():
         filename = f"AF-{uniprot_id}-F1-model_v4.cif"
         cif_path = input_dir / filename
         cif_files.append(cif_path)
-    
+
     print(f"Constructed {len(cif_files):,} CIF file paths", flush=True)
-    
+
     # Skip existence filtering - let workers handle missing files during processing
     print("Skipping existence pre-filtering (workers will handle missing files)", flush=True)
-    
+
     if len(cif_files) == 0:
         print("No CIF files to process!")
         return 1
-    
+
     if args.dry_run:
         # Estimate output
         total_appearances = len(cif_files) * args.coverage
@@ -432,7 +434,7 @@ def main():
         print(f"  Estimated total size: {est_size_gb:.1f} GB")
         print("  Memory usage: <10 GB (streaming mode)")
         return 0
-    
+
     # Create temporary directory
     if args.temp_dir:
         temp_dir = Path(args.temp_dir)
@@ -441,7 +443,7 @@ def main():
     else:
         temp_dir = Path(tempfile.mkdtemp(prefix="af2_chunks_"))
         print(f"Created temporary directory: {temp_dir}")
-    
+
     try:
         # Process CIF files in parallel and save to temporary files
         if args.num_workers is None:
@@ -533,12 +535,12 @@ def main():
         if failed_logs:
             failed_path = output_dir / "failed_files.txt"
             output_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Stream failures from log files to avoid loading huge lists into memory
             print("Consolidating failure logs...", flush=True)
             unique_failed = set()
             total_failed_entries = 0
-            
+
             for fl in failed_logs:
                 try:
                     with open(fl, 'r', encoding='utf-8') as f:
@@ -547,21 +549,21 @@ def main():
                             if line:
                                 unique_failed.add(line)
                                 total_failed_entries += 1
-                                
+
                                 # Flush to disk every 50k unique failures to avoid memory issues
                                 if len(unique_failed) >= 50000:
                                     with open(failed_path, 'a', encoding='utf-8') as out_f:
                                         out_f.write('\n'.join(sorted(unique_failed)) + '\n')
                                     unique_failed.clear()
-                                    
+
                 except FileNotFoundError:
                     continue
-            
+
             # Write remaining failures
             if unique_failed:
                 with open(failed_path, 'a', encoding='utf-8') as out_f:
                     out_f.write('\n'.join(sorted(unique_failed)) + '\n')
-            
+
             print(f"Saved consolidated failure log ({total_failed_entries:,} total failures) to {failed_path}", flush=True)
 
         metadata = create_pkl_chunks_streaming(
@@ -577,7 +579,7 @@ def main():
         print(f"📁 Output directory: {output_dir}")
         print(f"🧬 Total proteins: {metadata['total_proteins']:,}")
         print(f"📦 Average chunk size: {np.mean([s['size_mb'] for s in metadata['chunk_stats']]):.1f} MB")
-        
+
     finally:
         # Clean up temporary files
         if not args.keep_temp_files:
@@ -589,7 +591,7 @@ def main():
                 print(f"Warning: Could not remove temp directory {temp_dir}: {e}")
         else:
             print(f"Keeping temporary files in: {temp_dir}")
-    
+
     return 0
 
 

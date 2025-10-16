@@ -1,15 +1,22 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
-import torch, random, scipy, math
+import math
+import random
+
+import atom3d.datasets.ppi.neighbors as nb
+import numpy as np
+import pandas as pd
+import scipy
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pandas as pd
-import numpy as np
+import torch_cluster
+import torch_geometric
+import torch_scatter
 from atom3d.datasets import LMDBDataset
-import atom3d.datasets.ppi.neighbors as nb
 from torch.utils.data import IterableDataset
+
 from . import GVP, GVPConvLayer, LayerNorm
-import torch_cluster, torch_geometric, torch_scatter
 from .data import _normalize, _rbf
 
 _NUM_ATOM_TYPES = 9

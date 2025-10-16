@@ -14,7 +14,7 @@ Each section can be enabled/disabled independently and contains all relevant par
 
 import os
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 
 @dataclass

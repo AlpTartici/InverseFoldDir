@@ -1,7 +1,7 @@
 """
 alternating_dataloader.py
 
-DataLoader that creates pure homogeneous batches that alternate between AF2-only 
+DataLoader that creates pure homogeneous batches that alternate between AF2-only
 and PDB-only batches according to a specified ratio.
 
 For example, with ratio_af2_pdb=3:
@@ -9,10 +9,11 @@ For example, with ratio_af2_pdb=3:
 """
 
 import os
+import random
+from typing import Any, Dict, Iterator, List, Optional, Tuple
+
 import torch
 from torch.utils.data import DataLoader, Dataset
-from typing import Optional, Dict, List, Iterator, Tuple, Any
-import random
 
 from .cath_dataset import CathDataset
 from .unified_dataset import UnifiedDataset
@@ -21,44 +22,44 @@ from .unified_dataset import UnifiedDataset
 class AlternatingBatchDataLoader:
     """
     DataLoader that creates alternating pure batches (homogeneous).
-    
+
     Each batch contains only one data type (either all AF2 or all PDB).
     Batches alternate according to the specified ratio.
     """
-    
+
     def __init__(self,
                  # PDB parameters
                  split_json: Optional[str] = None,
                  map_pkl: Optional[str] = None,
                  split: str = 'train',
-                 
+
                  # AF2 parameters
                  af2_chunk_dir: Optional[str] = None,
                  af2_chunk_limit: Optional[int] = None,
-                 
+
                  # Alternating parameters
                  ratio_af2_pdb: int = 3,  # 3 AF2 batches per 1 PDB batch
                  num_batches_per_epoch: Optional[int] = None,  # Limit batches per epoch
-                 
+
                  # DataLoader parameters
                  batch_size: int = 32,
                  num_workers: int = 0,
                  pin_memory: bool = True,
-                 
+
                  # Common parameters
                  max_len: Optional[int] = None,
                  graph_builder_kwargs: Optional[Dict] = None,
-                 
+
                  # Iteration control
                  deterministic: bool = True,
-                 
+
                  # Distributed training
                  rank: int = 0,
                  world_size: int = 1,
                  seed: int = 42):
         """
         Initialize alternating batch dataloader.
-        
+
         Args:
             ratio_af2_pdb: Number of AF2 batches per PDB batch
             Other args: Same as unified dataset
@@ -69,11 +70,11 @@ class AlternatingBatchDataLoader:
         self.rank = rank
         self.world_size = world_size
         self.seed = seed
-        
+
         # Create separate datasets for AF2 and PDB
         self.af2_dataset = None
         self.pdb_dataset = None
-        
+
         if af2_chunk_dir:
             # Create AF2-only dataset
             self.af2_dataset = UnifiedDataset(
@@ -90,7 +91,7 @@ class AlternatingBatchDataLoader:
                 world_size=world_size,
                 seed=seed
             )
-        
+
         if split_json and map_pkl:
             # Create PDB-only dataset
             self.pdb_dataset = UnifiedDataset(
@@ -106,13 +107,13 @@ class AlternatingBatchDataLoader:
                 world_size=world_size,
                 seed=seed
             )
-        
+
         # Create individual dataloaders
         from training.collate import collate_fn
-        
+
         self.af2_loader = None
         self.pdb_loader = None
-        
+
         if self.af2_dataset:
             self.af2_loader = DataLoader(
                 self.af2_dataset,
@@ -122,7 +123,7 @@ class AlternatingBatchDataLoader:
                 pin_memory=pin_memory,
                 collate_fn=collate_fn
             )
-        
+
         if self.pdb_dataset:
             self.pdb_loader = DataLoader(
                 self.pdb_dataset,
@@ -132,11 +133,11 @@ class AlternatingBatchDataLoader:
                 pin_memory=pin_memory,
                 collate_fn=collate_fn
             )
-        
+
         # Calculate effective dataset size for alternating pattern
         af2_batches = len(self.af2_loader) if self.af2_loader else 0
         pdb_batches = len(self.pdb_loader) if self.pdb_loader else 0
-        
+
         if af2_batches > 0 and pdb_batches > 0:
             # Mixed mode: calculate how many complete cycles we can do
             cycle_length = ratio_af2_pdb + 1  # AF2 batches + 1 PDB batch
@@ -148,33 +149,33 @@ class AlternatingBatchDataLoader:
             calculated_batches = pdb_batches
         else:
             calculated_batches = 0
-        
+
         # Apply num_batches_per_epoch limit if specified
         if num_batches_per_epoch is not None:
             self.total_batches = min(calculated_batches, num_batches_per_epoch)
             print(f"Limiting alternating dataloader to {self.total_batches} batches per epoch (calculated: {calculated_batches})")
         else:
             self.total_batches = calculated_batches
-        
+
         print(f"Alternating dataloader: {af2_batches} AF2 batches, {pdb_batches} PDB batches")
         print(f"Alternating pattern: {ratio_af2_pdb} AF2 batches → 1 PDB batch (total: {self.total_batches} batches)")
-    
+
     def __len__(self) -> int:
         """Return total number of alternating batches."""
         return self.total_batches
-    
+
     def __iter__(self) -> Iterator[Tuple[Any, Any, Any]]:
         """Iterate through alternating pure batches."""
         if not self.af2_loader and not self.pdb_loader:
             return
-        
+
         # Create iterators
         af2_iter = iter(self.af2_loader) if self.af2_loader else None
         pdb_iter = iter(self.pdb_loader) if self.pdb_loader else None
-        
+
         batch_count = 0
         af2_in_cycle = 0  # Track AF2 batches in current cycle
-        
+
         while batch_count < self.total_batches:
             try:
                 if af2_in_cycle < self.ratio_af2_pdb and af2_iter:
@@ -182,31 +183,31 @@ class AlternatingBatchDataLoader:
                     batch = next(af2_iter)
                     af2_in_cycle += 1
                     batch_type = "AF2"
-                    
+
                 elif pdb_iter:
                     # Yield PDB batch and reset cycle
                     batch = next(pdb_iter)
                     af2_in_cycle = 0  # Reset cycle
                     batch_type = "PDB"
-                    
+
                 else:
                     # No more batches available
                     break
-                
+
                 # Add batch type info for debugging
                 data, y, mask = batch
                 if hasattr(data, 'batch_info'):
                     data.batch_info['batch_type'] = batch_type
                 else:
                     data.batch_info = {'batch_type': batch_type}
-                
+
                 yield batch
                 batch_count += 1
-                
+
             except StopIteration:
                 # One of the iterators is exhausted
                 break
-    
+
     def reset_epoch(self):
         """Reset for new epoch (if datasets support it)."""
         if hasattr(self.af2_dataset, 'reset_iteration'):
@@ -220,34 +221,34 @@ def create_alternating_dataloader(
     split_json: Optional[str] = None,
     map_pkl: Optional[str] = None,
     split: str = 'train',
-    
+
     # AF2 parameters
     af2_chunk_dir: Optional[str] = None,
     af2_chunk_limit: Optional[int] = None,
-    
+
     # Alternating parameters
     ratio_af2_pdb: int = 3,
     num_batches_per_epoch: Optional[int] = None,  # Limit batches per epoch
-    
+
     # DataLoader parameters
     batch_size: int = 32,
     num_workers: int = 0,
     pin_memory: bool = True,
-    
+
     # Common parameters
     max_len: Optional[int] = None,
     graph_builder_kwargs: Optional[Dict] = None,
-    
+
     # Iteration control
     deterministic: bool = True,
-    
+
     # Distributed training
     rank: int = 0,
     world_size: int = 1,
     seed: int = 42) -> AlternatingBatchDataLoader:
     """
     Create alternating batch dataloader for pure homogeneous batches.
-    
+
     Returns:
         AlternatingBatchDataLoader that yields pure AF2 or PDB batches in alternating pattern
     """

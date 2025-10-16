@@ -15,7 +15,7 @@ data:
   local_dir: ./datasets
   remote_dir: data/inv_fold/
 
-    
+
 
 jobs:
   - name: inverse_folding_train_v1_debug
@@ -47,22 +47,22 @@ jobs:
       - export NCCL_P2P_DISABLE=1
       - export NCCL_IB_DISABLE=1
       - export NCCL_SOCKET_IFNAME=^lo,docker
-      - torchrun --nproc_per_node=4 train.py 
-        --split_json $$AMLT_DATA_DIR/datasets/cath-4.2/chain_set_splits.json 
-        --map_pkl $$AMLT_DATA_DIR/datasets/cath-4.2/chain_set_map.pkl 
+      - torchrun --nproc_per_node=4 train.py
+        --split_json $$AMLT_DATA_DIR/datasets/cath-4.2/chain_set_splits.json
+        --map_pkl $$AMLT_DATA_DIR/datasets/cath-4.2/chain_set_map.pkl
         --epochs 20 --lr 4e-3 --weight_decay 0.01 --use_virtual_node
-        --mse_weight 0.1 --ce_weight 1.0 --dropout 0.2 
-        --scheduler_patience 4 
+        --mse_weight 0.1 --ce_weight 1.0 --dropout 0.2
+        --scheduler_patience 4
         --enable_checkpoint_rollback
         --num_workers 4 --distributed
         --use_smoothed_labels
         --use_wandb
-        --batch 256 --use_qkv --num_layers 2 --hidden_dim 32 
+        --batch 256 --use_qkv --num_layers 2 --hidden_dim 32
         --recycle_steps 1 --seed 42 --run_mode regular
         --output_dir $$AMLT_OUTPUT_DIR
       - echo "Training with the supernode completed successfully."
     submit_args:
-      max_run_duration_seconds: 86400 
+      max_run_duration_seconds: 86400
       env:
         _AZUREML_SINGULARITY_JOB_UAI: ***REMOVED***
         AMLT_DIRSYNC_FREQ: 20
@@ -72,5 +72,3 @@ jobs:
         WANDB_RUN_GROUP: "inverse-folding-distributed"
         WANDB_JOB_TYPE: "train"
     identity: managed
-
-

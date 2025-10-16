@@ -1,13 +1,16 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 import json
+import math
+import random
+
 import numpy as np
-import tqdm, random
-import torch, math
-import torch.utils.data as data
+import torch
 import torch.nn.functional as F
-import torch_geometric
+import torch.utils.data as data
 import torch_cluster
+import torch_geometric
+import tqdm
 
 
 def _normalize(tensor, dim=-1):

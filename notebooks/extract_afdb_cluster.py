@@ -1,8 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-import pandas as pd
 import json
+
+import pandas as pd
 from tqdm import tqdm
 
 print("Starting extraction of AFDB50 cluster representative IDs...", flush=True)

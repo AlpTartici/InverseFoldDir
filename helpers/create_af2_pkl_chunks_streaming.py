@@ -10,22 +10,23 @@ then creates chunks without loading everything into memory at once.
 Usage:
     python create_af2_pkl_chunks_streaming.py --input_dir /path/to/af2_cifs --cluster_dir /path/to/af_clusters --output_dir /path/to/pkl_chunks
 """
-import os
-import sys
 import argparse
+import json
+import os
 import pickle
 import random
-import numpy as np
-import tempfile
 import shutil
-import time
 import signal
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Iterator
+import sys
+import tempfile
+import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from tqdm import tqdm
-import json
 from contextlib import contextmanager
+from pathlib import Path
+from typing import Dict, Iterator, List, Optional, Tuple
+
+import numpy as np
+from tqdm import tqdm
 
 # Add parent directory for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
