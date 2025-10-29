@@ -82,6 +82,10 @@ def extract_chain_name_from_filename(filename):
     if name_without_ext.startswith('pred_for_'):
         chain_name = name_without_ext.replace('pred_for_', '')
         return chain_name
+    elif "chain" in name_without_ext:
+        pdb_id, chain_letter = name_without_ext.split('_chain')
+        chain_name = f"{pdb_id}.{chain_letter}"
+        return chain_name
     
     # If no prefix, just return the name without extension
     return name_without_ext
