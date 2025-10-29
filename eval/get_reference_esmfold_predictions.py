@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
+import argparse
 import os
 import signal
 from contextlib import contextmanager
@@ -24,14 +25,6 @@ tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1")
 
 # read the json file in ../datasets/dict_pdb_to_clean_seq_for_esmfold.json
 import json
-
-"""
-with open("../datasets/dict_pdb_to_seq_for_esmfold.json", "r") as f:
-    dict_pdb_to_clean_seq = json.load(f)
-"""
-
-with open("../datasets/dict_pdb_to_clean_seq_train.json", "r") as f:
-    dict_pdb_to_clean_seq = json.load(f)
 
 print("Script started...")
 
@@ -62,7 +55,7 @@ def timeout(seconds):
 def predict_structure(
     sequence,
     corresponding_pdb_id,
-    output_dir="../datasets/esmfold_predictions/esmfold_predictions_on_ref_train/",
+    output_dir="../datasets/esmfold_predictions/esmfold_predictions_on_ref_test/",
     timeout_seconds=15,
 ):
     """
@@ -90,7 +83,8 @@ def predict_structure(
 
 
 def get_reference_esmfold_predictions(
-    output_dir="../datasets/esmfold_predictions/esmfold_predictions_on_ref_train/",
+    input_json_path="../datasets/dict_chain_to_seq_test.json",
+    output_dir="../datasets/esmfold_predictions/esmfold_predictions_on_ref_test/",
     timeout_seconds=15,
 ):
     """
@@ -98,6 +92,10 @@ def get_reference_esmfold_predictions(
     predicts the structure using ESMFold, and saves the predictions in the specified output directory.
     Skips proteins that already have output files and adds timeout functionality.
     """
+    # Load the input JSON file
+    with open(input_json_path, "r") as f:
+        dict_pdb_to_clean_seq = json.load(f)
+    
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
@@ -108,6 +106,7 @@ def get_reference_esmfold_predictions(
     failed_predictions = 0
     timed_out = 0
 
+    print(f"Input JSON file: {input_json_path}")
     print(f"Total proteins to process: {total_proteins}")
     print(f"Using timeout: {timeout_seconds} seconds per protein")
     print(f"Output directory: {output_dir}")
@@ -152,10 +151,37 @@ def get_reference_esmfold_predictions(
 
 
 if __name__ == "__main__":
-    # You can adjust the timeout_seconds parameter here (default is 15 seconds)
-    get_reference_esmfold_predictions(timeout_seconds=15)
+    parser = argparse.ArgumentParser(
+        description="Generate ESMFold predictions for reference test sequences."
+    )
+    parser.add_argument(
+        "--input-json",
+        type=str,
+        default="../datasets/dict_chain_to_seq_test.json",
+        help="Input JSON file containing chain IDs and sequences (default: ../datasets/dict_chain_to_seq_test.json)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="../datasets/esmfold_predictions/esmfold_predictions_on_ref_test/",
+        help="Output directory for saving predictions (default: ../datasets/esmfold_predictions/esmfold_predictions_on_ref_test/)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=25,
+        help="Timeout duration in seconds for each prediction (default: 25)",
+    )
+    
+    args = parser.parse_args()
+    
+    get_reference_esmfold_predictions(
+        input_json_path=args.input_json,
+        output_dir=args.output_dir, 
+        timeout_seconds=args.timeoutkol
+    )
     print("All ESMFold predictions have been saved.")
 
 # write usage guide from command line to save stdout and stderr to a file with tee command 2>&1 | tee ../datasets/esmfold_predictions_on_ref/log.txt
-# Usage: python get_reference_esmfold_predictions.py 2>&1 | tee ../output/run_logs/20250714_120000_esmfold_on_reference.txt
+# Usage: python get_reference_esmfold_predictions.py --input-json ../datasets/missing_chains.json --output-dir ../datasets/esmfold_predictions/ --timeout 40 2>&1 | tee ../output/run_logs/20250714_120000_esmfold_on_reference.txt
 # This will save both stdout and stderr to log.txt in the specified directory.
