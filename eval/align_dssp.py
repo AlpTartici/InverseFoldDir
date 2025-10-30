@@ -76,9 +76,10 @@ def _build_matrix(mode: str, scale: int = 10):
 
     elif mode == "8":
         # Include "-" character which is standard DSSP for loop/irregular
-        alphabet = "HGIEBTSC-"
+        # 'P' is BioPython's notation for Pi helix (standard DSSP uses 'I')
+        alphabet = "HGPIEBTSC-"
         matrix = parasail.matrix_create(alphabet, 0, 0)
-        helix = {'H','G','I'}
+        helix = {'H','G','I','P'}  # P is pi helix in BioPython
         sheet = {'E','B'}
         coil  = {'T','S','C','-'}  # "-" is grouped with coil
         

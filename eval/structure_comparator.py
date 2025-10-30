@@ -260,7 +260,7 @@ class BatchStructureComparator:
 
         for pred_file in pred_files:
             structure_name = pred_file.stem.replace("pred_for_", "")
-            if 'all_chain_pdbs' in self.reference_dir.name:
+            if 'all_chain_pdbs' in self.reference_dir.name or 'chain_pdbs'in self.reference_dir.name:
                 ref_file = self.reference_dir / f"{structure_name.split('.')[0]}_chain{structure_name.split('.')[1]}.pdb"
             else:
                 ref_file = self.reference_dir / f"{structure_name}.pdb"  # Reference files are named directly as structure_name.pdb
@@ -503,7 +503,7 @@ def main():
     parser.add_argument("predicted_dir", help="Directory containing predicted structures")
     parser.add_argument("reference_dir", help="Directory containing reference structures")
     parser.add_argument("--csv_path", default=None, help="Path to CSV file with sequence predictions")
-    parser.add_argument("--output_path", default='./datasets/pdb_esmfold_comparison_train_set.csv', help="Path to save comparison results CSV")
+    parser.add_argument("--output_path", default='./datasets/pdb_esmfold_comparison_test_set.csv', help="Path to save comparison results CSV")
 
     args = parser.parse_args()
 

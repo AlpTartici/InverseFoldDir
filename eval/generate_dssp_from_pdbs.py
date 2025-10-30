@@ -111,7 +111,8 @@ def convert_dssp_8_to_3(dssp_8_array):
     mapping = {
         'H': 'H',  # Alpha helix -> Helix
         'G': 'H',  # 3-10 helix -> Helix
-        'I': 'H',  # Pi helix -> Helix
+        'I': 'H',  # Pi helix -> Helix (standard DSSP notation)
+        'P': 'H',  # Pi helix -> Helix (BioPython uses 'P' instead of 'I')
         'E': 'E',  # Extended strand -> Sheet
         'B': 'E',  # Beta bridge -> Sheet
         'T': 'C',  # Turn -> Coil
