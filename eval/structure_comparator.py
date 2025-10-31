@@ -19,6 +19,11 @@ import numpy as np
 import pandas as pd
 import tmtools
 
+# Import new metric calculators
+from lddt_calculator import calculate_lddt
+from gdt_calculator import calculate_gdt
+from dssp_alignment import calculate_dssp_alignment
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -165,7 +170,7 @@ class BatchStructureComparator:
     """
 
     def __init__(self, predicted_dir: str, reference_dir: str, csv_path: str, verbose: bool = False,
-                 protein_subset: List[str] = None, protein_timeout_minutes: float = 3.0):
+                 protein_subset: List[str] = None, protein_timeout_minutes: float = 12.0):
         """
         Initialize batch comparator.
 
@@ -345,11 +350,23 @@ class BatchStructureComparator:
                 pred_length = self.comparator.parse_pdb_sequence_length(pred_path)
                 ref_length = self.comparator.parse_pdb_sequence_length(ref_path)
 
-                logger.info(f"✓ {structure_name}: TM={metrics['tm_score']:.4f}, RMSD={metrics['rmsd']:.2f}Å")
+                # Format metrics, handling None values
+                lddt_val = metrics.get('lddt')
+                lddt_str = f"{lddt_val:.1f}" if lddt_val is not None else "N/A"
+                gdt_ts_val = metrics.get('gdt_ts')
+                gdt_ts_str = f"{gdt_ts_val:.1f}" if gdt_ts_val is not None else "N/A"
+                
+                logger.info(f"✓ {structure_name}: TM={metrics['tm_score']:.4f}, RMSD={metrics['rmsd']:.2f}Å, "
+                           f"LDDT={lddt_str}, GDT_TS={gdt_ts_str}")
                 if self.verbose:
                     logger.debug(f"  Lengths: pred={pred_length}, ref={ref_length}")
+                    dssp_3_val = metrics.get('dssp_3state_accuracy')
+                    dssp_3_str = f"{dssp_3_val:.1f}" if dssp_3_val is not None else "N/A"
+                    dssp_8_val = metrics.get('dssp_8state_accuracy')
+                    dssp_8_str = f"{dssp_8_val:.1f}" if dssp_8_val is not None else "N/A"
+                    logger.debug(f"  DSSP 3-state: {dssp_3_str}%, 8-state: {dssp_8_str}%")
 
-                # Compile results
+                # Compile results with all metrics
                 result = {
                     'structure_name': structure_name,
                     'sequence_length': seq_info.get('length', None),
@@ -358,11 +375,32 @@ class BatchStructureComparator:
                     'sequence_accuracy': seq_info.get('accuracy', None),
                     'pred_structure_length': pred_length,
                     'ref_structure_length': ref_length,
+                    # TM-score metrics
                     'tm_score': metrics['tm_score'],
                     'tm_score_ref': metrics['tm_score_ref'],
                     'rmsd': metrics['rmsd'],
                     'aligned_length': metrics['aligned_length'],
                     'seq_id_aligned': metrics['seq_identity'],
+                    # LDDT metric
+                    'lddt': metrics.get('lddt', None),
+                    # GDT metrics
+                    'gdt_ts': metrics.get('gdt_ts', None),
+                    'gdt_ha': metrics.get('gdt_ha', None),
+                    'gdt_05': metrics.get('gdt_05', None),
+                    'gdt_1': metrics.get('gdt_1', None),
+                    'gdt_2': metrics.get('gdt_2', None),
+                    'gdt_4': metrics.get('gdt_4', None),
+                    'gdt_8': metrics.get('gdt_8', None),
+                    # DSSP metrics
+                    'dssp_3state_accuracy': metrics.get('dssp_3state_accuracy', None),
+                    'dssp_8state_accuracy': metrics.get('dssp_8state_accuracy', None),
+                    'dssp_3state_score': metrics.get('dssp_3state_score', None),
+                    'dssp_8state_score': metrics.get('dssp_8state_score', None),
+                    'dssp_3state_alignment_ref': metrics.get('dssp_3state_alignment_ref', ''),
+                    'dssp_3state_alignment_pred': metrics.get('dssp_3state_alignment_pred', ''),
+                    'dssp_8state_alignment_ref': metrics.get('dssp_8state_alignment_ref', ''),
+                    'dssp_8state_alignment_pred': metrics.get('dssp_8state_alignment_pred', ''),
+                    # File paths
                     'predicted_structure_path': pred_path,
                     'reference_structure_path': ref_path
                 }
@@ -401,6 +439,12 @@ class BatchStructureComparator:
                 'structure_name', 'sequence_length', 'predicted_sequence', 'true_sequence',
                 'sequence_accuracy', 'pred_structure_length', 'ref_structure_length',
                 'tm_score', 'tm_score_ref', 'rmsd', 'aligned_length', 'seq_id_aligned',
+                'lddt',
+                'gdt_ts', 'gdt_ha', 'gdt_05', 'gdt_1', 'gdt_2', 'gdt_4', 'gdt_8',
+                'dssp_3state_accuracy', 'dssp_8state_accuracy',
+                'dssp_3state_score', 'dssp_8state_score',
+                'dssp_3state_alignment_ref', 'dssp_3state_alignment_pred',
+                'dssp_8state_alignment_ref', 'dssp_8state_alignment_pred',
                 'predicted_structure_path', 'reference_structure_path'
             ])
             # Save empty CSV to prevent FileNotFoundError downstream
@@ -424,14 +468,33 @@ class BatchStructureComparator:
 
     def _print_summary_stats(self, df: pd.DataFrame):
         """Print summary statistics of comparison results."""
-        print("\n" + "="*60)
+        print("\n" + "="*80)
         print("STRUCTURAL COMPARISON SUMMARY")
-        print("="*60)
+        print("="*80)
 
         print(f"Total comparisons: {len(df)}")
-        print(f"Average TM-score: {df['tm_score'].mean():.4f} ± {df['tm_score'].std():.4f}")
+        
+        # Basic metrics
+        print(f"\nAverage TM-score: {df['tm_score'].mean():.4f} ± {df['tm_score'].std():.4f}")
         print(f"Average RMSD: {df['rmsd'].mean():.2f} ± {df['rmsd'].std():.2f} Å")
-        print(f"Average sequence accuracy: {df['sequence_accuracy'].mean():.2f}%")
+        
+        # LDDT metrics
+        if 'lddt' in df.columns and df['lddt'].notna().any():
+            print(f"Average LDDT: {df['lddt'].mean():.2f} ± {df['lddt'].std():.2f}")
+        
+        # GDT metrics
+        if 'gdt_ts' in df.columns and df['gdt_ts'].notna().any():
+            print(f"Average GDT_TS: {df['gdt_ts'].mean():.2f} ± {df['gdt_ts'].std():.2f}")
+            print(f"Average GDT_HA: {df['gdt_ha'].mean():.2f} ± {df['gdt_ha'].std():.2f}")
+        
+        # DSSP metrics
+        if 'dssp_3state_accuracy' in df.columns and df['dssp_3state_accuracy'].notna().any():
+            print(f"Average DSSP 3-state accuracy: {df['dssp_3state_accuracy'].mean():.2f}%")
+            print(f"Average DSSP 8-state accuracy: {df['dssp_8state_accuracy'].mean():.2f}%")
+        
+        # Sequence accuracy (if available)
+        if 'sequence_accuracy' in df.columns and df['sequence_accuracy'].notna().any():
+            print(f"Average sequence accuracy: {df['sequence_accuracy'].mean():.2f}%")
 
         print("\nTM-score distribution:")
         print(f"  > 0.5 (good): {(df['tm_score'] > 0.5).sum()} ({(df['tm_score'] > 0.5).mean()*100:.1f}%)")
@@ -439,20 +502,42 @@ class BatchStructureComparator:
         print(f"  > 0.3: {(df['tm_score'] > 0.3).sum()} ({(df['tm_score'] > 0.3).mean()*100:.1f}%)")
 
         print("\nTop 5 structures by TM-score:")
-        top5 = df.nlargest(5, 'tm_score')[['structure_name', 'tm_score', 'rmsd', 'sequence_accuracy']]
+        display_cols = ['structure_name', 'tm_score', 'rmsd']
+        if 'lddt' in df.columns:
+            display_cols.append('lddt')
+        if 'gdt_ts' in df.columns:
+            display_cols.append('gdt_ts')
+        
+        top5 = df.nlargest(5, 'tm_score')[display_cols]
         for _, row in top5.iterrows():
-            print(f"  {row['structure_name']}: TM={row['tm_score']:.4f}, RMSD={row['rmsd']:.2f}Å, SeqAcc={row['sequence_accuracy']:.1f}%")
+            metrics_str = f"TM={row['tm_score']:.4f}, RMSD={row['rmsd']:.2f}Å"
+            if 'lddt' in row and pd.notna(row.get('lddt')):
+                metrics_str += f", LDDT={row['lddt']:.1f}"
+            if 'gdt_ts' in row and pd.notna(row.get('gdt_ts')):
+                metrics_str += f", GDT_TS={row['gdt_ts']:.1f}"
+            print(f"  {row['structure_name']}: {metrics_str}")
 
         print("\nWorst 5 structures by TM-score:")
-        worst5 = df.nsmallest(5, 'tm_score')[['structure_name', 'tm_score', 'rmsd', 'sequence_accuracy']]
+        worst5 = df.nsmallest(5, 'tm_score')[display_cols]
         for _, row in worst5.iterrows():
-            print(f"  {row['structure_name']}: TM={row['tm_score']:.4f}, RMSD={row['rmsd']:.2f}Å, SeqAcc={row['sequence_accuracy']:.1f}%")
+            metrics_str = f"TM={row['tm_score']:.4f}, RMSD={row['rmsd']:.2f}Å"
+            if 'lddt' in row and pd.notna(row.get('lddt')):
+                metrics_str += f", LDDT={row['lddt']:.1f}"
+            if 'gdt_ts' in row and pd.notna(row.get('gdt_ts')):
+                metrics_str += f", GDT_TS={row['gdt_ts']:.1f}"
+            print(f"  {row['structure_name']}: {metrics_str}")
 
-        print("="*60)
+        print("="*80)
 
     def _calculate_metrics_with_timeout(self, pred_path: str, ref_path: str, structure_name: str) -> Optional[Dict[str, float]]:
         """
         Calculate structural metrics with timeout handling.
+        
+        Calculates multiple structural comparison metrics:
+            - TM-score: Uses aligned regions after optimal superposition
+            - LDDT: Local metric, no global superposition (uses full structures independently)
+            - GDT: Uses aligned regions after optimal global superposition
+            - DSSP: Compares secondary structure via global alignment
 
         Args:
             pred_path: Path to predicted structure
@@ -460,7 +545,7 @@ class BatchStructureComparator:
             structure_name: Name of the structure (for logging)
 
         Returns:
-            Dict with metrics or None if failed
+            Dict with all structural metrics or None if failed
 
         Raises:
             TimeoutError: If calculation exceeds timeout
@@ -468,18 +553,113 @@ class BatchStructureComparator:
         def timeout_handler(signum, frame):
             raise TimeoutError(f"Comparison timeout for {structure_name}")
 
-        # Set up timeout
+        # Set up timeout (increased 4x to accommodate all metrics)
         timeout_seconds = int(self.protein_timeout_minutes * 60)
         old_handler = signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(timeout_seconds)
 
         try:
             if self.verbose:
-                logger.debug(f"  Calculating TM-score and RMSD with {timeout_seconds}s timeout...")
+                logger.debug(f"  Calculating all structural metrics with {timeout_seconds}s timeout...")
 
-            metrics = self.comparator.calculate_tm_score(pred_path, ref_path)
+            # Calculate TM-score (uses aligned regions after optimal superposition)
+            if self.verbose:
+                logger.debug("  Computing TM-score...")
+            tm_metrics = self.comparator.calculate_tm_score(pred_path, ref_path)
+            if tm_metrics is None:
+                signal.alarm(0)
+                return None
+            
+            # Extract chain ID from structure_name for REFERENCE
+            # ESMFold predictions always use chain 'A', so pred_chain_id='A'
+            # Format: "1mab.G" -> ref_chain='G', pred_chain='A' (ESMFold default)
+            ref_chain_id = None
+            if '.' in structure_name:
+                parts = structure_name.split('.')
+                if len(parts) == 2 and len(parts[1]) == 1:
+                    ref_chain_id = parts[1]
+            
+            # ESMFold predictions ALWAYS use chain 'A' regardless of original chain
+            pred_chain_id = 'A'
+            
+            # Calculate LDDT (local metric, no global superposition - uses full structures independently)
+            # Uses per-residue averaging with sequence separation |i-j|>=2
+            if self.verbose:
+                logger.debug(f"  Computing LDDT (ref chain={ref_chain_id}, pred chain={pred_chain_id})...")
+            lddt_metrics = calculate_lddt(ref_path, pred_path, 
+                                         ref_chain_id=ref_chain_id,
+                                         pred_chain_id=pred_chain_id)
+            # Fallback: if fails, try with first chains (None, None)
+            if lddt_metrics is None and ref_chain_id is not None:
+                if self.verbose:
+                    logger.debug(f"  LDDT failed with specified chains, retrying with first chains")
+                lddt_metrics = calculate_lddt(ref_path, pred_path, 
+                                             ref_chain_id=None,
+                                             pred_chain_id=None)
+            if lddt_metrics is None:
+                lddt_metrics = {'lddt': None}
+            
+            # Calculate GDT (uses aligned regions after optimal global superposition via Kabsch)
+            # Implements LGA-style iterative refinement with fragment seeding per cutoff
+            if self.verbose:
+                logger.debug(f"  Computing GDT (ref chain={ref_chain_id}, pred chain={pred_chain_id})...")
+            gdt_metrics = calculate_gdt(ref_path, pred_path,
+                                       ref_chain_id=ref_chain_id,
+                                       pred_chain_id=pred_chain_id)
+            # Fallback: if fails, try with first chains
+            if gdt_metrics is None and ref_chain_id is not None:
+                if self.verbose:
+                    logger.debug(f"  GDT failed with specified chains, retrying with first chains")
+                gdt_metrics = calculate_gdt(ref_path, pred_path,
+                                           ref_chain_id=None,
+                                           pred_chain_id=None)
+            if gdt_metrics is None:
+                gdt_metrics = {
+                    'gdt_ts': None,
+                    'gdt_ha': None,
+                    'gdt_05': None,
+                    'gdt_1': None,
+                    'gdt_2': None,
+                    'gdt_4': None,
+                    'gdt_8': None
+                }
+            
+            # Calculate DSSP alignment (compares secondary structure via global alignment)
+            # Uses correct denominator (mapped residues) and adaptive gap penalties
+            if self.verbose:
+                logger.debug(f"  Computing DSSP alignment (ref chain={ref_chain_id}, pred chain={pred_chain_id})...")
+            dssp_metrics = calculate_dssp_alignment(ref_path, pred_path,
+                                                   ref_chain_id=ref_chain_id,
+                                                   pred_chain_id=pred_chain_id)
+            # Fallback: if fails, try with first chains
+            if dssp_metrics is None and ref_chain_id is not None:
+                if self.verbose:
+                    logger.debug(f"  DSSP failed with specified chains, retrying with first chains")
+                dssp_metrics = calculate_dssp_alignment(ref_path, pred_path,
+                                                       ref_chain_id=None,
+                                                       pred_chain_id=None)
+            if dssp_metrics is None:
+                dssp_metrics = {
+                    'dssp_3state_accuracy': None,
+                    'dssp_8state_accuracy': None,
+                    'dssp_3state_score': None,
+                    'dssp_8state_score': None,
+                    'dssp_3state_alignment_ref': '',
+                    'dssp_3state_alignment_pred': '',
+                    'dssp_8state_alignment_ref': '',
+                    'dssp_8state_alignment_pred': ''
+                }
+            
+            # Combine all metrics
+            all_metrics = {
+                **tm_metrics,
+                **lddt_metrics,
+                **gdt_metrics,
+                **dssp_metrics
+            }
+            
             signal.alarm(0)  # Cancel timeout
-            return metrics
+            return all_metrics
 
         except TimeoutError:
             signal.alarm(0)  # Cancel timeout
